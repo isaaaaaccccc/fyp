@@ -74,13 +74,19 @@ class TimetablingService:
             # Get qualifications (levels they can teach)
             qualifications = [cp.level.name for cp in coach.preferred_levels]
             
-            # Get availability from CoachOffday (True means NOT available)
-            availability = defaultdict(lambda: defaultdict(lambda: True))
+            # Initialize availability as all available by default
+            availability = {}
+            day_names = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+            for day_name in day_names:
+                availability[day_name] = {'am': True, 'pm': True}
+            
+            # Update availability from CoachOffday 
+            # Note: offday.day is stored as string day name, offday.am indicates AM/PM period
             for offday in coach.offdays:
-                day_names = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
-                day_name = day_names[offday.day]
+                day_name = offday.day  # Already a string like 'MON', 'TUE', etc.
                 period = 'am' if offday.am else 'pm'
-                availability[day_name][period] = False  # False means not available
+                if day_name in availability:
+                    availability[day_name][period] = False  # False means not available
             
             coaches_data[coach.id] = {
                 'id': coach.id,
@@ -243,16 +249,21 @@ class TimetablingService:
         
         used_slots = set()  # Track (coach_id, day, start_time)
         
+        # Map day names to match frontend expectations
+        day_mapping = {
+            'TUE': 'Tuesday', 'WED': 'Wednesday', 'THU': 'Thursday',
+            'FRI': 'Friday', 'SAT': 'Saturday', 'SUN': 'Sunday', 'MON': 'Monday'
+        }
+        
         for assignment in sorted_assignments:
             slot_key = (assignment['coach_id'], assignment['day'], assignment['start_time'])
             
             if slot_key not in used_slots:
-                schedule[assignment['branch']][assignment['day']][assignment['coach_name']].append({
+                frontend_day = day_mapping.get(assignment['day'], assignment['day'])
+                schedule[assignment['branch']][frontend_day][assignment['coach_name']].append({
                     'name': assignment['level'],
                     'start_time': assignment['start_time'].replace(':', ''),
-                    'duration': assignment['duration'] // 30,  # Convert to 30-min slots
-                    'students': assignment['students_available'],
-                    'capacity': assignment['capacity']
+                    'duration': assignment['duration'] // 30  # Convert to 30-min slots
                 })
                 used_slots.add(slot_key)
         
