@@ -1,0 +1,1985 @@
+{
+  "BB": {
+    "coaches": [
+      "Amirah",
+      "Ayuni",
+      "Batrisyia",
+      "Nasuha",
+      "Nawawi",
+      "Oliver",
+      "Siti",
+      "Warren Wong",
+      "Xin Jie",
+      "Zandra"
+    ],
+    "schedule": {
+      "Tuesday": {
+        "Oliver": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Xin Jie": [
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Wednesday": {
+        "Oliver": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ]
+      },
+      "Thursday": {
+        "Amirah": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1530"
+          }
+        ],
+        "Oliver": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Xin Jie": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Friday": {
+        "Oliver": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Siti": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1630"
+          }
+        ],
+        "Warren Wong": [
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ],
+        "Xin Jie": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Saturday": {
+        "Amirah": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1130"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Ayuni": [
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1400"
+          }
+        ],
+        "Nawawi": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1400"
+          }
+        ],
+        "Oliver": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Siti": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1630"
+          }
+        ],
+        "Xin Jie": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "Free",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "Free",
+            "start_time": "1400"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Zandra": [
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1400"
+          }
+        ]
+      },
+      "Sunday": {
+        "Ayuni": [
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1230"
+          }
+        ],
+        "Batrisyia": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "0900"
+          },
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1630"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1730"
+          }
+        ],
+        "Nasuha": [
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1000"
+          }
+        ],
+        "Nawawi": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1400"
+          }
+        ],
+        "Oliver": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1130"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Siti": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1630"
+          }
+        ],
+        "Warren Wong": [
+          {
+            "duration": 3,
+            "name": "L4",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1400"
+          }
+        ],
+        "Xin Jie": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1100"
+          },
+          {
+            "duration": 3,
+            "name": "Advance",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L4",
+            "start_time": "1400"
+          }
+        ],
+        "Zandra": [
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1400"
+          }
+        ]
+      }
+    }
+  },
+  "CCK": {
+    "coaches": [
+      "Cheng Hong",
+      "Chris",
+      "Eugene",
+      "Francis",
+      "Vivian",
+      "Yen Zen"
+    ],
+    "schedule": {
+      "Tuesday": {
+        "Vivian": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Yen Zen": [
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Wednesday": {
+        "Vivian": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1530"
+          }
+        ],
+        "Yen Zen": [
+          {
+            "duration": 2,
+            "name": "Tots",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Thursday": {
+        "Vivian": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Yen Zen": [
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Friday": {
+        "Cheng Hong": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1630"
+          }
+        ],
+        "Vivian": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Yen Zen": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Saturday": {
+        "Cheng Hong": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1400"
+          }
+        ],
+        "Chris": [
+          {
+            "duration": 3,
+            "name": "L4",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L4",
+            "start_time": "1400"
+          }
+        ],
+        "Eugene": [
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1400"
+          }
+        ],
+        "Francis": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Vivian": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Yen Zen": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1400"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Sunday": {
+        "Cheng Hong": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1400"
+          }
+        ],
+        "Chris": [
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1400"
+          }
+        ],
+        "Francis": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1100"
+          }
+        ],
+        "Vivian": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Yen Zen": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1400"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1630"
+          }
+        ]
+      }
+    }
+  },
+  "CH": {
+    "coaches": [
+      "Amber",
+      "Charmaine",
+      "Diyanah",
+      "Joanne",
+      "Lawrence",
+      "Rejab",
+      "Syahirah",
+      "Yippy"
+    ],
+    "schedule": {
+      "Tuesday": {
+        "Amber": [
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1530"
+          }
+        ],
+        "Lawrence": [
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ],
+        "Rejab": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ]
+      },
+      "Wednesday": {
+        "Lawrence": [
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ],
+        "Rejab": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ]
+      },
+      "Thursday": {
+        "Amber": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1530"
+          }
+        ],
+        "Lawrence": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ],
+        "Rejab": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Yippy": [
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Friday": {
+        "Amber": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1530"
+          }
+        ],
+        "Joanne": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1530"
+          }
+        ],
+        "Lawrence": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ],
+        "Rejab": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Syahirah": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Yippy": [
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Saturday": {
+        "Amber": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1400"
+          }
+        ],
+        "Charmaine": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Diyanah": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Lawrence": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1130"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1400"
+          }
+        ],
+        "Rejab": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1400"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Syahirah": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1400"
+          }
+        ],
+        "Yippy": [
+          {
+            "duration": 3,
+            "name": "Advance",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L4",
+            "start_time": "1400"
+          }
+        ]
+      },
+      "Sunday": {
+        "Amber": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1130"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          }
+        ],
+        "Charmaine": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1100"
+          }
+        ],
+        "Diyanah": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1100"
+          }
+        ],
+        "Lawrence": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1130"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1400"
+          }
+        ],
+        "Rejab": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1130"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Syahirah": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          }
+        ],
+        "Yippy": [
+          {
+            "duration": 3,
+            "name": "L4",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1400"
+          }
+        ]
+      }
+    }
+  },
+  "HG": {
+    "coaches": [
+      "Amirul",
+      "Brandon",
+      "Gibson",
+      "Gwen",
+      "Jannah",
+      "Nasuha",
+      "Xiao You"
+    ],
+    "schedule": {
+      "Tuesday": {
+        "Jannah": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Xiao You": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ]
+      },
+      "Wednesday": {
+        "Jannah": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Nasuha": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ]
+      },
+      "Thursday": {
+        "Jannah": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Nasuha": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Xiao You": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Friday": {
+        "Jannah": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Nasuha": [
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1530"
+          }
+        ],
+        "Xiao You": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Saturday": {
+        "Amirul": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1400"
+          }
+        ],
+        "Brandon": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1400"
+          }
+        ],
+        "Gibson": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1100"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1400"
+          }
+        ],
+        "Gwen": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1130"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Jannah": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1130"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Nasuha": [
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1130"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Xiao You": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1400"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Sunday": {
+        "Amirul": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1400"
+          }
+        ],
+        "Brandon": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1400"
+          }
+        ],
+        "Gwen": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Jannah": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1130"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Xiao You": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1400"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1630"
+          }
+        ]
+      }
+    }
+  },
+  "KT": {
+    "coaches": [
+      "Eunicia",
+      "Geraldine",
+      "Jia Yang",
+      "Rifqah",
+      "Syafi",
+      "Warren Wong",
+      "York"
+    ],
+    "schedule": {
+      "Tuesday": {
+        "Syafi": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Warren Wong": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Wednesday": {
+        "Jia Yang": [
+          {
+            "duration": 3,
+            "name": "L4",
+            "start_time": "1630"
+          }
+        ],
+        "Rifqah": [
+          {
+            "duration": 2,
+            "name": "Tots",
+            "start_time": "1000"
+          }
+        ],
+        "Syafi": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ]
+      },
+      "Thursday": {
+        "Rifqah": [
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1530"
+          }
+        ],
+        "Syafi": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Warren Wong": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Friday": {
+        "Jia Yang": [
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ],
+        "Rifqah": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1530"
+          }
+        ],
+        "Syafi": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "York": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ]
+      },
+      "Saturday": {
+        "Eunicia": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Geraldine": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "0900"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1130"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Jia Yang": [
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1400"
+          }
+        ],
+        "Rifqah": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          }
+        ],
+        "Syafi": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1400"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "Warren Wong": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1130"
+          },
+          {
+            "duration": 3,
+            "name": "Advance",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1400"
+          }
+        ],
+        "York": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1400"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ]
+      },
+      "Sunday": {
+        "Eunicia": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          }
+        ],
+        "Geraldine": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1130"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Jia Yang": [
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1400"
+          }
+        ],
+        "Rifqah": [
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1100"
+          }
+        ],
+        "Syafi": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1130"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "York": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          }
+        ]
+      }
+    }
+  },
+  "PR": {
+    "coaches": [
+      "Dewi",
+      "James",
+      "Jia Yang",
+      "Mori",
+      "Nian",
+      "Riona"
+    ],
+    "schedule": {
+      "Tuesday": {
+        "Jia Yang": [
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1630"
+          }
+        ],
+        "Mori": [
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1530"
+          }
+        ]
+      },
+      "Wednesday": {
+        "Mori": [
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1100"
+          }
+        ]
+      },
+      "Thursday": {
+        "Jia Yang": [
+          {
+            "duration": 3,
+            "name": "L3",
+            "start_time": "1630"
+          }
+        ],
+        "Mori": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1530"
+          }
+        ]
+      },
+      "Friday": {
+        "Dewi": [
+          {
+            "duration": 2,
+            "name": "Tots",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "James": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          }
+        ],
+        "Mori": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1530"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1630"
+          }
+        ]
+      },
+      "Saturday": {
+        "Dewi": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1530"
+          }
+        ],
+        "James": [
+          {
+            "duration": 2,
+            "name": "Flexi",
+            "start_time": "1000"
+          }
+        ],
+        "Mori": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L2",
+            "start_time": "1400"
+          }
+        ],
+        "Nian": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1400"
+          }
+        ],
+        "Riona": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "0900"
+          },
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          }
+        ]
+      },
+      "Sunday": {
+        "Dewi": [
+          {
+            "duration": 2,
+            "name": "Lively",
+            "start_time": "1000"
+          }
+        ],
+        "Nian": [
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1000"
+          },
+          {
+            "duration": 3,
+            "name": "L1",
+            "start_time": "1230"
+          }
+        ],
+        "Riona": [
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1100"
+          }
+        ]
+      }
+    }
+  }
+}

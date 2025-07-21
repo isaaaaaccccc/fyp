@@ -1,0 +1,42 @@
+coach_id,coach_name,residential_area,assigned_branch,position,status,BearyTots,Jolly,Bubbly,Lively,Flexi,Level_1,Level_2,Level_3,Level_4,Advance,Free
+1,Ayuni,Jurong West,BB,Branch Manager,Full time,False,True,True,True,True,True,True,False,False,False,False
+2,Chris,JB,CCK,Branch Manager,Full time,False,False,True,True,True,True,True,True,True,False,False
+3,Gibson,Tampines,HG,Branch Manager,Full time,False,True,True,True,True,True,True,True,True,False,False
+4,James,BIshan,PR,Branch Manager,Full time,False,True,True,True,True,False,False,False,False,False,False
+5,Joanne,Bedok,CH,Branch Manager,Full time,False,True,True,True,True,False,False,False,False,False,False
+6,Oliver,Woodlands,BB,Junior Coach,Full time,False,False,True,True,True,False,False,False,False,False,False
+7,Amirah,Jurong,BB,Junior Coach,Full time,False,False,True,True,False,False,False,False,False,False,False
+8,Xin Jie,Joo Koon,BB,Junior Coach,Full time,False,False,False,False,True,True,True,True,True,True,True
+9,Batrisyia,Jurong West,BB,,Part time,False,True,True,False,False,False,False,False,False,False,False
+10,Nawawi,Bukit Batok,BB,,Part time,False,False,False,False,True,True,False,False,False,False,False
+11,Siti,Jurong West,BB,,Part time,False,False,False,True,True,True,False,False,False,False,False
+12,Zandra,Woodlands,BB,,Part time,False,False,False,False,False,False,True,True,False,False,False
+13,Warren Wong,Aljunied,"BB, HG, KT",Senior Coach,Full time,False,False,True,True,True,True,True,True,True,True,True
+14,Nasuha,Woodlands,"BB, HG",Junior Coach,Full time,False,True,True,True,True,False,False,False,False,False,False
+15,Rejab,Woodlands,"BB, CH",Junior Coach,Full time,False,False,False,False,True,True,False,False,False,False,False
+16,Vivian,CCK,CCK,Junior Coach,Full time,True,True,True,True,True,False,False,False,False,False,False
+17,Yen Zen,JB,CCK,Junior Coach,Full time,True,True,True,True,True,True,True,True,False,False,False
+18,Cheng Hong,JB,CCK,Junior Coach,Full time,False,False,True,True,True,True,False,False,False,False,False
+19,Francis,CCK,CCK,,Part time,False,False,False,True,True,False,False,False,False,False,False
+20,Eugene,CCK,CCK,,Part time,False,False,False,False,False,False,False,True,False,False,False
+21,Lawrence,Pasir Ris,CH,Junior Coach,Full time,False,False,False,False,True,True,True,False,False,False,False
+22,Amber,Pasir Ris,CH,Junior Coach,Full time,True,True,True,True,True,True,False,False,False,False,False
+23,Yippy,Bedok,CH,Junior Coach,Full time,False,False,False,False,True,True,True,True,True,True,True
+24,Syahirah,Bedok,CH,,Part time,False,False,False,False,True,True,False,False,False,False,False
+25,Diyanah,Sengkang,CH,,Part time,False,True,True,True,True,False,False,False,False,False,False
+26,Charmaine,Tampines,CH,,Part time,False,False,True,True,True,False,False,False,False,False,False
+27,Jannah,Hougang,HG,Admin cum coach,Full time,False,True,True,True,False,False,False,False,False,False,False
+28,Xiao You,Pasir Ris,HG,Junior Coach,Full time,True,True,True,True,True,True,False,False,False,False,False
+29,Amirul,AMK,HG,Junior Coach,Full time,False,False,False,False,True,True,True,False,False,False,False
+30,Brandon,HG,HG,,Part time,False,False,True,True,True,True,True,True,False,False,False
+31,Gwen,HG,HG,,Part time,False,False,True,True,True,False,False,False,False,False,False
+32,Eunicia,KT,"HG, KT",,Part time,False,False,True,True,True,True,False,False,False,False,False
+33,Syafi,Woodlands,KT,Junior Coach,Full time,False,False,False,True,True,True,False,False,False,False,False
+34,York,Pasir Ris,KT,Junior Coach,Full time,False,False,False,True,True,True,False,False,False,False,False
+35,Rifqah,CCK,KT,Junior Coach,Full time,True,True,True,True,True,False,False,False,False,False,False
+36,Geraldine,KT,KT,,Part time,False,False,True,True,True,False,False,False,False,False,False
+37,Jia Yang,Tampines,"KT, PR",Junior Coach,Full time,False,False,False,True,True,True,True,True,True,True,True
+38,Nian,Pasir Ris,PR,Junior Coach,Full time,False,False,False,False,False,True,False,False,False,False,False
+39,Mori,Pasir Ris,PR,Senior Coach,Full time,True,True,True,True,True,True,True,False,False,False,False
+40,Dewi,Admilraty,PR,Junior Coach,Full time,True,True,True,True,False,False,False,False,False,False,False
+41,Riona,Pasir Ris,PR,,Part time,False,False,True,True,False,False,False,False,False,False,False
