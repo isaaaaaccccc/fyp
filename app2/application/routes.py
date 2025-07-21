@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, request, flash, redirect, jsonify, get_flashed_messages
+from flask import Blueprint, render_template, request, flash, redirect, jsonify, get_flashed_messages, url_for
+from werkzeug.utils import secure_filename
+import pandas as pd
+import os
 from application import db, bcrypt
-from application.models import User
+from application.models import User, Coach, Level, Branch, CoachBranch, CoachOffday, CoachPreference, PopularTimeslots, EnrollmentCounts, BranchConfig, CoachAvailability
 from flask_login import login_user, logout_user, login_required
-from .forms import CoachFilter, CoachDetails
-from .models import Coach, Level, Branch, CoachBranch, CoachOffday, CoachPreference
+from .forms import CoachFilter, CoachDetails, CSVUploadForm
+from .timetabling_service import TimetablingService
 
 
 pages_bp = Blueprint('pages', __name__)
@@ -25,172 +28,191 @@ def dashboard():
 def timetable():
     return render_template('timetable.html')
 
+@pages_bp.route('/upload')
+def upload():
+    return render_template('upload.html', form=CSVUploadForm())
+
+@pages_bp.route('/upload', methods=['POST'])
+def upload_csv():
+    form = CSVUploadForm()
+    
+    if form.validate_on_submit():
+        try:
+            # Process uploaded files
+            results = {}
+            
+            if form.availability_csv.data:
+                results['availability'] = process_availability_csv(form.availability_csv.data)
+            
+            if form.branch_config_csv.data:
+                results['branch_config'] = process_branch_config_csv(form.branch_config_csv.data)
+            
+            if form.coaches_csv.data:
+                results['coaches'] = process_coaches_csv(form.coaches_csv.data)
+            
+            if form.enrollment_csv.data:
+                results['enrollment'] = process_enrollment_csv(form.enrollment_csv.data)
+            
+            if form.popular_timeslots_csv.data:
+                results['popular_timeslots'] = process_popular_timeslots_csv(form.popular_timeslots_csv.data)
+            
+            db.session.commit()
+            
+            flash(f'Successfully uploaded and processed {len(results)} file(s)', 'success')
+            return redirect(url_for('pages.timetable'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error processing CSV files: {str(e)}', 'error')
+    
+    return render_template('upload.html', form=form)
+
+def process_availability_csv(file):
+    """Process availability.csv file"""
+    df = pd.read_csv(file)
+    
+    # Clear existing availability data
+    CoachAvailability.query.delete()
+    
+    for _, row in df.iterrows():
+        availability = CoachAvailability(
+            coach_id=row['coach_id'],
+            day=row['day'],
+            period=row['period'],
+            available=row['available'],
+            restriction_reason=row.get('restriction_reason', '')
+        )
+        db.session.add(availability)
+    
+    return f"Processed {len(df)} availability records"
+
+def process_branch_config_csv(file):
+    """Process branch_config.csv file"""
+    df = pd.read_csv(file)
+    
+    # Clear existing branch config data
+    BranchConfig.query.delete()
+    
+    for _, row in df.iterrows():
+        config = BranchConfig(
+            branch=row['branch'],
+            max_classes_per_slot=row['max_classes_per_slot']
+        )
+        db.session.add(config)
+    
+    return f"Processed {len(df)} branch config records"
+
+def process_coaches_csv(file):
+    """Process coaches.csv file"""
+    df = pd.read_csv(file)
+    
+    # Clear existing coach data
+    Coach.query.delete()
+    CoachBranch.query.delete()
+    CoachPreference.query.delete()
+    
+    # Get qualification columns
+    qual_columns = ['BearyTots', 'Jolly', 'Bubbly', 'Lively', 'Flexi', 
+                   'Level_1', 'Level_2', 'Level_3', 'Level_4', 'Advance', 'Free']
+    
+    for _, row in df.iterrows():
+        coach = Coach(
+            id=row['coach_id'],
+            name=row['coach_name'],
+            residential_area=row['residential_area'],
+            position=row['position'],
+            status=row['status']
+        )
+        db.session.add(coach)
+        db.session.flush()  # Get the coach ID
+        
+        # Add branch assignment
+        branch = Branch.query.filter_by(abbrv=row['assigned_branch']).first()
+        if branch:
+            coach_branch = CoachBranch(coach_id=coach.id, branch_id=branch.id)
+            db.session.add(coach_branch)
+        
+        # Add qualifications
+        for qual_col in qual_columns:
+            if qual_col in df.columns and row.get(qual_col, False):
+                # Map column names to level names
+                level_name = qual_col.replace('Level_', 'L').replace('BearyTots', 'Tots')
+                level = Level.query.filter_by(name=level_name).first()
+                if level:
+                    preference = CoachPreference(coach_id=coach.id, level_id=level.id)
+                    db.session.add(preference)
+    
+    return f"Processed {len(df)} coach records"
+
+def process_enrollment_csv(file):
+    """Process enrollment.csv file"""
+    df = pd.read_csv(file)
+    
+    # Clear existing enrollment data
+    EnrollmentCounts.query.delete()
+    
+    for _, row in df.iterrows():
+        enrollment = EnrollmentCounts(
+            branch=row['Branch'],
+            level_category_base=row['Level Category Base'],
+            count=row['Count']
+        )
+        db.session.add(enrollment)
+    
+    return f"Processed {len(df)} enrollment records"
+
+def process_popular_timeslots_csv(file):
+    """Process popular_timeslots.csv file"""
+    df = pd.read_csv(file)
+    
+    # Clear existing popular timeslots data
+    PopularTimeslots.query.delete()
+    
+    for _, row in df.iterrows():
+        timeslot = PopularTimeslots(
+            time_slot=row['time_slot'],
+            day=row['day'],
+            level=row['level']
+        )
+        db.session.add(timeslot)
+    
+    return f"Processed {len(df)} popular timeslot records"
+
 @pages_bp.route('/database/coach')
 def coach_db():
     return render_template('coach_db.html', filter=CoachFilter(), details=CoachDetails())
 
-# To replace with timetable generation algorithm
+# Updated generate endpoint to use real timetabling algorithm
 @api_bp.route('/generate', methods=['GET'])
 def generate():
-    return jsonify({
-        'CCK': {
-            'coaches': ['Chris', 'Yenzen', 'Vivian', 'Cheng Hong', 'Francis', 'Eugene'],
-            'schedule': {
-                'Tuesday': {
-                    'Yenzen': [
-                        {'name': 'L2', 'start_time': '1530', 'duration': 3},
-                        {'name': 'L2', 'start_time': '1700', 'duration': 3},
-                    ],
-                    'Vivian': [
-                        {'name': 'Lively', 'start_time': '1630', 'duration': 2},
-                        {'name': 'Bubbly', 'start_time': '1730', 'duration': 2},
-                    ],
-                    'Cheng Hong': [
-                        {'name': 'L1', 'start_time': '1530', 'duration': 3},
-                        {'name': 'Flexi', 'start_time': '1730', 'duration': 2},
-                    ],
-                },
-                'Wednesday': {
-                    'Yenzen': [
-                        {'name': 'L2', 'start_time': '1530', 'duration': 3},
-                        {'name': 'L2', 'start_time': '1700', 'duration': 3},
-                    ],
-                    'Vivian': [
-                        {'name': 'Flexi', 'start_time': '1600', 'duration': 2},
-                        {'name': 'Lively', 'start_time': '1700', 'duration': 2},
-                    ],
-                    'Chris': [
-                        {'name': 'L1', 'start_time': '1530', 'duration': 3},
-                        {'name': 'L1', 'start_time': '1700', 'duration': 3},
-                    ],
-                },
-                'Thursday': {
-                    'Chris': [
-                        {'name': 'L2', 'start_time': '1700', 'duration': 3},
-                    ],
-                    'Yenzen': [
-                        {'name': 'L3', 'start_time': '1530', 'duration': 3},
-                        {'name': 'L1', 'start_time': '1700', 'duration': 3},
-                    ],
-                    'Vivian': [
-                        {'name': 'Jolly', 'start_time': '1030', 'duration': 2},
-                        {'name': 'Bubbly', 'start_time': '1630', 'duration': 2},
-                        {'name': 'Bubbly', 'start_time': '1730', 'duration': 2},
-                    ],
-                    'Cheng Hong': [
-                        {'name': 'Bubbly', 'start_time': '1630', 'duration': 2},
-                        {'name': 'Bubbly', 'start_time': '1730', 'duration': 2},
-                    ],
-                },
-                'Friday': {
-                    'Chris': [
-                        {'name': 'L3', 'start_time': '1530', 'duration': 3},
-                        {'name': 'L3', 'start_time': '1700', 'duration': 3},
-                    ],
-                    'Yenzen': [
-                        {'name': 'L1', 'start_time': '1530', 'duration': 3},
-                        {'name': 'L2', 'start_time': '1730', 'duration': 3},
-                    ],
-                    'Vivian': [
-                        {'name': 'Tots', 'start_time': '1100', 'duration': 2},
-                        {'name': 'Jolly', 'start_time': '1600', 'duration': 2},
-                        {'name': 'Lively', 'start_time': '1700', 'duration': 2},
-                        {'name': 'Flexi', 'start_time': '1800', 'duration': 2},
-                    ],
-                    'Cheng Hong': [
-                        {'name': 'L1', 'start_time': '1530', 'duration': 3},
-                        {'name': 'Flexi', 'start_time': '1800', 'duration': 2},
-                    ],
-                },
-                'Saturday': {
-                    'Chris': [
-                        {'name': 'L4', 'start_time': '1400', 'duration': 3},
-                        {'name': 'Flexi', 'start_time': '1630', 'duration': 2},
-                    ],
-                    'Yenzen': [
-                        {'name': 'L1', 'start_time': '0900', 'duration': 3},
-                        {'name': 'L1', 'start_time': '1030', 'duration': 3},
-                        {'name': 'L3', 'start_time': '1230', 'duration': 3},
-                        {'name': 'L1', 'start_time': '1400', 'duration': 3},
-                        {'name': 'L2', 'start_time': '1700', 'duration': 3},
-                    ],
-                    'Vivian': [
-                        {'name': 'Bubbly', 'start_time': '0930', 'duration': 2},
-                        {'name': 'Jolly', 'start_time': '1030', 'duration': 2},
-                        {'name': 'Jolly', 'start_time': '1130', 'duration': 2},
-                        {'name': 'Bubbly', 'start_time': '1530', 'duration': 2},
-                        {'name': 'Bubbly', 'start_time': '1630', 'duration': 2},
-                    ],
-                    'Cheng Hong': [
-                        {'name': 'Flexi', 'start_time': '0930', 'duration': 2},
-                        {'name': 'Bubbly', 'start_time': '1130', 'duration': 2},
-                        {'name': 'L1', 'start_time': '1230', 'duration': 3},
-                        {'name': 'L1', 'start_time': '1530', 'duration': 3},
-                        {'name': 'Lively', 'start_time': '1730', 'duration': 2,}
-                    ],
-                    'Francis': [
-                        {'name': 'Lively', 'start_time': '0930', 'duration': 2},
-                        {'name': 'Flexi', 'start_time': '1030', 'duration': 2},
-                        {'name': 'Lively', 'start_time': '1130', 'duration': 2},
-                    ],
-                    'Eugene': [
-                        {'name': 'L3', 'start_time': '1400', 'duration': 3},
-                        {'name': 'L3', 'start_time': '1530', 'duration': 3},
-                    ]
-                },
-                'Sunday': {
-                    'Chris': [
-                        {'name': 'L3', 'start_time': '1230', 'duration': 3},
-                        {'name': 'L3', 'start_time': '1400', 'duration': 3},
-                        {'name': 'Lively', 'start_time': '1630', 'duration': 2},
-                    ],
-                    'Yenzen': [
-                        {'name': 'L1', 'start_time': '0900', 'duration': 3},
-                        {'name': 'L1', 'start_time': '1030', 'duration': 3},
-                        {'name': 'L2', 'start_time': '1230', 'duration': 3},
-                        {'name': 'L2', 'start_time': '1400', 'duration': 3},
-                        {'name': 'Bubbly', 'start_time': '1630', 'duration': 2},
-                    ],
-                    'Vivian': [
-                        {'name': 'Jolly', 'start_time': '0930', 'duration': 2},
-                        {'name': 'Bubbly', 'start_time': '1030', 'duration': 2},
-                        {'name': 'Bubbly', 'start_time': '1130', 'duration': 2},
-                        {'name': 'Tots', 'start_time': '1530', 'duration': 2},
-                        {'name': 'Jolly', 'start_time': '1630', 'duration': 2},
-                    ],
-                    'Cheng Hong': [
-                        {'name': 'Bubbly', 'start_time': '0930', 'duration': 2},
-                        {'name': 'Flexi', 'start_time': '1130', 'duration': 2},
-                        {'name': 'L1', 'start_time': '1230', 'duration': 3},
-                        {'name': 'L1', 'start_time': '1400', 'duration': 3},
-                        {'name': 'L1', 'start_time': '1530', 'duration': 3},
-                    ],
-                    'Francis': [
-                        {'name': 'Lively', 'start_time': '0930', 'duration': 2},
-                        {'name': 'Lively', 'start_time': '1030', 'duration': 2},
-                        {'name': 'Lively', 'start_time': '1130', 'duration': 2},
-                    ],
-                    'Eugene': [
-                        {'name': 'Flexi', 'start_time': '1530', 'duration': 2},
-                    ]
-                },
-            }
-        },
-        'HG': {
-            'coaches': ['Xiao You', 'Amirul', 'Brandon', 'Gwen', 'Eunicia'],
-            'schedule': {
-                'Tuesday': {
-                    'Xiao You': [
-                        {'name': 'Jolly', 'start_time': '0930', 'duration': 2},
-                        {'name': 'Bubbly', 'start_time': '1030', 'duration': 2},
-                        {'name': 'Bubbly', 'start_time': '1130', 'duration': 2},
-                        {'name': 'Tots', 'start_time': '1530', 'duration': 2},
-                        {'name': 'Jolly', 'start_time': '1630', 'duration': 2}
-                    ],
+    try:
+        service = TimetablingService()
+        result = service.generate_timetable()
+        return jsonify(result)
+    except Exception as e:
+        # Return fallback data in case of errors
+        return jsonify({
+            'error': str(e),
+            'CCK': {
+                'coaches': ['Chris', 'Yenzen', 'Vivian', 'Cheng Hong', 'Francis', 'Eugene'],
+                'schedule': {
+                    'Tuesday': {
+                        'Yenzen': [
+                            {'name': 'L2', 'start_time': '1530', 'duration': 3},
+                            {'name': 'L2', 'start_time': '1700', 'duration': 3},
+                        ],
+                        'Vivian': [
+                            {'name': 'Lively', 'start_time': '1630', 'duration': 2},
+                            {'name': 'Bubbly', 'start_time': '1730', 'duration': 2},
+                        ],
+                        'Cheng Hong': [
+                            {'name': 'L1', 'start_time': '1530', 'duration': 3},
+                            {'name': 'Flexi', 'start_time': '1730', 'duration': 2},
+                        ],
+                    }
                 }
             }
-        }
-    })
+        })
 
 @api_bp.route('/coach')
 def coach():

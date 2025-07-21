@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms.fields import StringField, PasswordField, SubmitField, RadioField, IntegerField, SelectField, SelectMultipleField, BooleanField
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 
@@ -62,3 +63,17 @@ class CoachDetails(FlaskForm):
                 field_name = f'editOffday_{day}_{half}'
                 field = BooleanField(label=f'{day} {half}')
                 setattr(self, field_name, field)
+
+# CSV Upload Forms
+class CSVUploadForm(FlaskForm):
+    availability_csv = FileField('Availability CSV', 
+                                 validators=[FileAllowed(['csv'], 'CSV files only!')])
+    branch_config_csv = FileField('Branch Config CSV', 
+                                  validators=[FileAllowed(['csv'], 'CSV files only!')])
+    coaches_csv = FileField('Coaches CSV', 
+                           validators=[FileAllowed(['csv'], 'CSV files only!')])
+    enrollment_csv = FileField('Enrollment CSV', 
+                              validators=[FileAllowed(['csv'], 'CSV files only!')])
+    popular_timeslots_csv = FileField('Popular Timeslots CSV', 
+                                     validators=[FileAllowed(['csv'], 'CSV files only!')])
+    submit = SubmitField('Upload CSV Files')

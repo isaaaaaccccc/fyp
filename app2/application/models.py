@@ -80,6 +80,43 @@ class CoachPreference(db.Model):
     level = db.relationship('Level', back_populates='preferred_by_coaches')
 
 # =============================================================
+# ======================== CSV Data Models =====================
+# =============================================================
+
+class PopularTimeslots(db.Model):
+    __tablename__ = 'popular_timeslots'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    time_slot = db.Column(db.String(32), nullable=False)  # e.g., "08:30-12:30"
+    day = db.Column(db.String(10), nullable=False)        # e.g., "WED"
+    level = db.Column(db.String(32), nullable=False)      # e.g., "Tots"
+
+class EnrollmentCounts(db.Model):
+    __tablename__ = 'enrollment_counts'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    branch = db.Column(db.String(10), nullable=False)           # e.g., "BB"
+    level_category_base = db.Column(db.String(32), nullable=False)  # e.g., "Advance"
+    count = db.Column(db.Integer, nullable=False)
+
+class BranchConfig(db.Model):
+    __tablename__ = 'branch_config'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    branch = db.Column(db.String(10), nullable=False, unique=True)  # e.g., "BB"
+    max_classes_per_slot = db.Column(db.Integer, nullable=False)
+
+class CoachAvailability(db.Model):
+    __tablename__ = 'coach_availability'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    coach_id = db.Column(db.Integer, nullable=False)
+    day = db.Column(db.String(10), nullable=False)        # e.g., "MON"
+    period = db.Column(db.String(10), nullable=False)     # "am" or "pm"
+    available = db.Column(db.Boolean, nullable=False)
+    restriction_reason = db.Column(db.String(64), nullable=True)
+
+# =============================================================
 # ==================== Generated Timetable ====================
 # =============================================================
 
