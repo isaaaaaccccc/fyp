@@ -226,6 +226,96 @@ def get_algorithms():
             'error': str(e)
         }), 500
 
+# Enhanced schedule validation endpoint
+@api_bp.route('/validate/schedule', methods=['POST'])
+def validate_schedule():
+    """Perform comprehensive validation on a generated schedule."""
+    try:
+        data = request.get_json()
+        schedule = data.get('schedule', [])
+        config = data.get('config', {})
+        
+        if not schedule:
+            return jsonify({
+                'success': False,
+                'error': 'No schedule provided for validation'
+            }), 400
+        
+        from application.services.enhanced_validation import ScheduleValidator
+        
+        validator = ScheduleValidator(schedule, config)
+        validation_result = validator.validate_comprehensive()
+        
+        return jsonify({
+            'success': True,
+            'validation': validation_result,
+            'schedule_size': len(schedule),
+            'validated_at': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# Configuration management endpoints
+@api_bp.route('/config/presets', methods=['GET'])
+def get_config_presets():
+    """Get predefined configuration presets for the enhanced algorithm."""
+    try:
+        from application.services.enhanced_validation import ConfigurationManager
+        
+        presets = {
+            'default': ConfigurationManager.get_default_config(),
+            'conservative': ConfigurationManager.get_conservative_config(),
+            'aggressive': ConfigurationManager.get_aggressive_config()
+        }
+        
+        return jsonify({
+            'success': True,
+            'presets': presets,
+            'descriptions': {
+                'default': 'Balanced configuration with standard workload limits',
+                'conservative': 'Stricter limits for better work-life balance',
+                'aggressive': 'Higher limits for maximum coverage and utilization'
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@api_bp.route('/config/validate', methods=['POST'])
+def validate_config():
+    """Validate a configuration before using it."""
+    try:
+        config = request.get_json()
+        
+        if not config:
+            return jsonify({
+                'success': False,
+                'error': 'No configuration provided'
+            }), 400
+        
+        from application.services.enhanced_validation import ConfigurationManager
+        
+        validation_result = ConfigurationManager.validate_config(config)
+        
+        return jsonify({
+            'success': True,
+            'validation': validation_result,
+            'config_valid': validation_result['valid']
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @api_bp.route('/coach')
 def coach():
     form = CoachFilter(request.args)
