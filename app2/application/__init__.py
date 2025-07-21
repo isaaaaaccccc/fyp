@@ -31,8 +31,12 @@ def create_app(config_path='config.cfg'):
     def get_user():
         return {'user': current_user}
 
-    from application.routes import pages_bp, api_bp
+    from application.routes import pages_bp, api_bp, upload_bp, branch_bp, level_bp
+    
     app.register_blueprint(pages_bp)
     app.register_blueprint(api_bp)
+    app.register_blueprint(upload_bp)
+    app.register_blueprint(branch_bp)
+    app.register_blueprint(level_bp)
     
     return app

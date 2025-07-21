@@ -1,0 +1,396 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<style>
+    .upload-section {
+        border: 2px dashed #ddd;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+        transition: border-color 0.3s ease;
+    }
+    .upload-section:hover {
+        border-color: #007bff;
+    }
+    .upload-section.dragover {
+        border-color: #007bff;
+        background-color: #f8f9fa;
+    }
+    .file-preview {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .upload-types {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .upload-type-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .upload-type-card:hover {
+        border-color: #007bff;
+        box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+    }
+    .upload-type-card.active {
+        border-color: #007bff;
+        background-color: #f8f9fa;
+    }
+    .progress-container {
+        display: none;
+        margin-top: 1rem;
+    }
+    .alert {
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Data Upload</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="/">Home</a></li>
+                        <li class="breadcrumb-item active">Data Upload</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <!-- Upload Type Selection -->
+            <div class="upload-types">
+                <div class="upload-type-card" data-type="coaches">
+                    <h5><i class="bi bi-people-fill"></i> Coaches Data</h5>
+                    <p class="text-muted">Upload coach information, positions, and level preferences</p>
+                    <small>Required columns: coach_name, residential_area, assigned_branch, position, status, level preferences</small>
+                </div>
+                <div class="upload-type-card" data-type="availability">
+                    <h5><i class="bi bi-calendar-check"></i> Availability Data</h5>
+                    <p class="text-muted">Upload coach availability schedules</p>
+                    <small>Required columns: coach_name, day, period, available</small>
+                </div>
+                <div class="upload-type-card" data-type="enrollment">
+                    <h5><i class="bi bi-bar-chart-fill"></i> Enrollment Data</h5>
+                    <p class="text-muted">Upload student enrollment counts by branch and level</p>
+                    <small>Required columns: Branch, Level Category Base, Count</small>
+                </div>
+                <div class="upload-type-card" data-type="branch_config">
+                    <h5><i class="bi bi-building"></i> Branch Configuration</h5>
+                    <p class="text-muted">Upload branch settings and capacity limits</p>
+                    <small>Required columns: branch, max_classes_per_slot</small>
+                </div>
+            </div>
+
+            <!-- File Upload Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Upload CSV File</h5>
+                </div>
+                <div class="card-body">
+                    <div id="upload-section" class="upload-section">
+                        <div id="upload-prompt">
+                            <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #6c757d;"></i>
+                            <h5>Select Upload Type Above, Then Upload CSV File</h5>
+                            <p class="text-muted">Drag and drop your CSV file here, or click to browse</p>
+                            <input type="file" id="file-input" accept=".csv" style="display: none;">
+                            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('file-input').click()" disabled id="browse-btn">
+                                <i class="bi bi-folder2-open"></i> Browse Files
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="progress-container">
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted mt-1" id="progress-text">Processing...</small>
+                    </div>
+
+                    <!-- Alerts -->
+                    <div id="alert-container"></div>
+
+                    <!-- File Preview -->
+                    <div id="preview-section" style="display: none;">
+                        <h6>File Preview</h6>
+                        <div class="file-preview">
+                            <div id="preview-content"></div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-success" id="import-btn" disabled>
+                                <i class="bi bi-download"></i> Import Data
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="cancel-btn">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Instructions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Upload Instructions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Coaches CSV Format:</h6>
+                            <ul class="small">
+                                <li>coach_name: Full name of the coach</li>
+                                <li>residential_area: Coach's residential area</li>
+                                <li>assigned_branch: Branch abbreviation (BB, CCK, CH, HG, KT, PR)</li>
+                                <li>position: Coach position (Full Time, Part Time, Branch Manager)</li>
+                                <li>status: Employment status</li>
+                                <li>Level columns: BearyTots, Jolly, Bubbly, Lively, Flexi, Level_1, Level_2, Level_3, Level_4, Advance, Free (TRUE/FALSE)</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Other CSV Formats:</h6>
+                            <ul class="small">
+                                <li><strong>Availability:</strong> coach_name, day (MON-SUN), period (AM/PM), available (TRUE/FALSE)</li>
+                                <li><strong>Enrollment:</strong> Branch, Level Category Base, Count</li>
+                                <li><strong>Branch Config:</strong> branch, max_classes_per_slot</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedUploadType = null;
+let currentFilePath = null;
+
+// Upload type selection
+document.querySelectorAll('.upload-type-card').forEach(card => {
+    card.addEventListener('click', function() {
+        // Remove active class from all cards
+        document.querySelectorAll('.upload-type-card').forEach(c => c.classList.remove('active'));
+        
+        // Add active class to clicked card
+        this.classList.add('active');
+        
+        // Set selected type
+        selectedUploadType = this.dataset.type;
+        
+        // Enable browse button
+        document.getElementById('browse-btn').disabled = false;
+        
+        // Update upload prompt
+        const prompt = document.querySelector('#upload-prompt h5');
+        prompt.textContent = `Upload ${this.querySelector('h5').textContent}`;
+        
+        // Reset any previous state
+        resetUploadState();
+    });
+});
+
+// File input handling
+const fileInput = document.getElementById('file-input');
+const uploadSection = document.getElementById('upload-section');
+
+fileInput.addEventListener('change', handleFileSelect);
+
+// Drag and drop handling
+uploadSection.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.classList.add('dragover');
+});
+
+uploadSection.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    this.classList.remove('dragover');
+});
+
+uploadSection.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.classList.remove('dragover');
+    
+    if (!selectedUploadType) {
+        showAlert('Please select an upload type first', 'warning');
+        return;
+    }
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFileSelect({ target: { files: files } });
+    }
+});
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (!selectedUploadType) {
+        showAlert('Please select an upload type first', 'warning');
+        return;
+    }
+    
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+        showAlert('Please select a CSV file', 'danger');
+        return;
+    }
+    
+    // Show progress
+    showProgress('Uploading and validating file...');
+    
+    // Create FormData
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_type', selectedUploadType);
+    
+    // Upload and preview
+    fetch('/upload/preview', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideProgress();
+        
+        if (data.success) {
+            showPreview(data.preview);
+            currentFilePath = data.preview.temp_filepath;
+            showAlert(data.message, 'success');
+        } else {
+            showAlert(data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        hideProgress();
+        showAlert('Error uploading file: ' + error.message, 'danger');
+    });
+}
+
+function showPreview(preview) {
+    const previewSection = document.getElementById('preview-section');
+    const previewContent = document.getElementById('preview-content');
+    
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>File Info</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Total Rows</td><td>${preview.total_rows}</td></tr>
+                    <tr><td>Columns</td><td>${preview.columns.length}</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <h6 class="mt-3">Column Names:</h6>
+        <div class="mb-3">
+            ${preview.columns.map(col => `<span class="badge bg-secondary me-1">${col}</span>`).join('')}
+        </div>
+        
+        <h6>Sample Data (first 5 rows):</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        ${preview.columns.map(col => `<th>${col}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${preview.sample_data.slice(0, 5).map(row => 
+                        `<tr>${preview.columns.map(col => `<td>${row[col] || ''}</td>`).join('')}</tr>`
+                    ).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    previewContent.innerHTML = html;
+    previewSection.style.display = 'block';
+    document.getElementById('import-btn').disabled = false;
+}
+
+// Import button
+document.getElementById('import-btn').addEventListener('click', function() {
+    if (!currentFilePath) {
+        showAlert('No file to import', 'warning');
+        return;
+    }
+    
+    showProgress('Importing data into database...');
+    
+    fetch('/upload/import', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            filepath: currentFilePath,
+            upload_type: selectedUploadType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideProgress();
+        
+        if (data.success) {
+            showAlert(data.message, 'success');
+            resetUploadState();
+        } else {
+            showAlert(data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        hideProgress();
+        showAlert('Error importing data: ' + error.message, 'danger');
+    });
+});
+
+// Cancel button
+document.getElementById('cancel-btn').addEventListener('click', resetUploadState);
+
+function showProgress(text) {
+    document.querySelector('.progress-container').style.display = 'block';
+    document.getElementById('progress-text').textContent = text;
+    document.querySelector('.progress-bar').style.width = '100%';
+}
+
+function hideProgress() {
+    document.querySelector('.progress-container').style.display = 'none';
+    document.querySelector('.progress-bar').style.width = '0%';
+}
+
+function showAlert(message, type) {
+    const alertContainer = document.getElementById('alert-container');
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    alertContainer.innerHTML = alertHtml;
+}
+
+function resetUploadState() {
+    document.getElementById('preview-section').style.display = 'none';
+    document.getElementById('import-btn').disabled = true;
+    document.getElementById('file-input').value = '';
+    currentFilePath = null;
+    document.getElementById('alert-container').innerHTML = '';
+}
+</script>
+{% endblock %}
