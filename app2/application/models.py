@@ -91,23 +91,6 @@ class CoachPreference(db.Model):
 # ==================== Helper Methods ====================
 # =============================================================
 
-    def to_dict(self):
-        """Convert coach to dictionary for API responses."""
-        return {
-            'id': self.id,
-            'name': self.name,
-            'residential_area': self.residential_area,
-            'position': self.position,
-            'status': self.status,
-            'assigned_branches': [cb.branch.abbrv for cb in self.assigned_branches],
-            'offdays': [{
-                'day': cd.day,
-                'am': cd.am,
-                'reason': cd.reason
-            } for cd in self.offdays],
-            'preferred_levels': [cl.level.name for cl in self.preferred_levels]
-        }
-
 # Add helper methods to Coach class
 Coach.to_dict = lambda self: {
     'id': self.id,
