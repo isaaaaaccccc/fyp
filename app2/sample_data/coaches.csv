@@ -1,0 +1,6 @@
+coach_id,coach_name,residential_area,assigned_branch,position,status,BearyTots,Jolly,Bubbly,Lively,Flexi,Level_1,Level_2,Level_3,Level_4,Advance,Free
+1,Ayuni,Jurong West,BB,Branch Manager,Full time,False,True,True,True,True,True,True,False,False,False,False
+2,Sarah Kim,Clementi,CCK,Senior Coach,Full time,True,True,True,True,True,True,True,True,False,False,False
+3,Mike Chen,Hougang,HG,Junior Coach,Part time,False,False,True,True,True,True,False,False,False,False,False
+4,Jessica Tan,Kallang,KT,Admin cum coach,Full time,True,True,True,False,False,True,True,False,False,False,False
+5,David Wong,Pasir Ris,PR,Senior Coach,Full time,False,True,True,True,True,True,True,True,True,True,False

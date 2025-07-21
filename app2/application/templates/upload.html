@@ -1,0 +1,317 @@
+{% extends "layout.html" %}
+{% block head %}
+<title>CSV Upload</title>
+<style>
+.upload-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.file-upload-card {
+    border: 2px dashed #dee2e6;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    transition: border-color 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+.file-upload-card:hover {
+    border-color: #6f42c1;
+}
+
+.file-upload-card.dragover {
+    border-color: #6f42c1;
+    background-color: #f8f9fa;
+}
+
+.file-input-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.file-input-wrapper input[type=file] {
+    position: absolute;
+    left: -9999px;
+}
+
+.file-input-label {
+    padding: 0.5rem 1rem;
+    background-color: #6f42c1;
+    color: white;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.file-input-label:hover {
+    background-color: #5a2d91;
+}
+
+.file-info {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    border-left: 4px solid #28a745;
+}
+
+.format-example {
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    margin-top: 0.5rem;
+    font-family: monospace;
+    font-size: 0.875rem;
+}
+
+.upload-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+}
+
+.upload-section h5 {
+    color: #6f42c1;
+    margin-bottom: 1rem;
+}
+
+.progress-container {
+    display: none;
+    margin-top: 1rem;
+}
+
+.alert {
+    margin-top: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+    <h1 class="text-center mb-4">CSV Data Upload</h1>
+    <p class="text-center text-muted mb-4">Upload your data files to populate the timetabling system</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+        {{ form.hidden_tag() }}
+
+        <!-- Availability CSV -->
+        <div class="upload-section">
+            <h5><i class="bi bi-calendar-check"></i> Coach Availability</h5>
+            <p class="text-muted">Upload coach availability data including days off and restrictions.</p>
+            
+            <div class="file-upload-card">
+                <div class="file-input-wrapper">
+                    {{ form.availability_csv(class="form-control", id="availability_csv") }}
+                    <label for="availability_csv" class="file-input-label">
+                        <i class="bi bi-cloud-upload"></i> Choose Availability CSV
+                    </label>
+                </div>
+                <div id="availability_info" class="file-info d-none">
+                    <strong>File selected:</strong> <span class="filename"></span>
+                </div>
+            </div>
+            
+            <div class="format-example">
+                <strong>Expected format:</strong><br>
+                availability_id,coach_id,day,period,available,restriction_reason<br>
+                1,1,MON,am,False,full_day_off<br>
+                2,1,MON,pm,False,full_day_off
+            </div>
+        </div>
+
+        <!-- Branch Config CSV -->
+        <div class="upload-section">
+            <h5><i class="bi bi-building"></i> Branch Configuration</h5>
+            <p class="text-muted">Upload branch configuration including maximum classes per time slot.</p>
+            
+            <div class="file-upload-card">
+                <div class="file-input-wrapper">
+                    {{ form.branch_config_csv(class="form-control", id="branch_config_csv") }}
+                    <label for="branch_config_csv" class="file-input-label">
+                        <i class="bi bi-cloud-upload"></i> Choose Branch Config CSV
+                    </label>
+                </div>
+                <div id="branch_config_info" class="file-info d-none">
+                    <strong>File selected:</strong> <span class="filename"></span>
+                </div>
+            </div>
+            
+            <div class="format-example">
+                <strong>Expected format:</strong><br>
+                branch,max_classes_per_slot<br>
+                BB,4<br>
+                CCK,4
+            </div>
+        </div>
+
+        <!-- Coaches CSV -->
+        <div class="upload-section">
+            <h5><i class="bi bi-people"></i> Coaches Data</h5>
+            <p class="text-muted">Upload comprehensive coach information including qualifications and assignments.</p>
+            
+            <div class="file-upload-card">
+                <div class="file-input-wrapper">
+                    {{ form.coaches_csv(class="form-control", id="coaches_csv") }}
+                    <label for="coaches_csv" class="file-input-label">
+                        <i class="bi bi-cloud-upload"></i> Choose Coaches CSV
+                    </label>
+                </div>
+                <div id="coaches_info" class="file-info d-none">
+                    <strong>File selected:</strong> <span class="filename"></span>
+                </div>
+            </div>
+            
+            <div class="format-example">
+                <strong>Expected format:</strong><br>
+                coach_id,coach_name,residential_area,assigned_branch,position,status,BearyTots,Jolly,Bubbly,Lively,Flexi,Level_1,Level_2,Level_3,Level_4,Advance,Free<br>
+                1,Ayuni,Jurong West,BB,Branch Manager,Full time,False,True,True,True,True,True,True,False,False,False,False
+            </div>
+        </div>
+
+        <!-- Enrollment CSV -->
+        <div class="upload-section">
+            <h5><i class="bi bi-graph-up"></i> Enrollment Data</h5>
+            <p class="text-muted">Upload student enrollment counts by branch and level.</p>
+            
+            <div class="file-upload-card">
+                <div class="file-input-wrapper">
+                    {{ form.enrollment_csv(class="form-control", id="enrollment_csv") }}
+                    <label for="enrollment_csv" class="file-input-label">
+                        <i class="bi bi-cloud-upload"></i> Choose Enrollment CSV
+                    </label>
+                </div>
+                <div id="enrollment_info" class="file-info d-none">
+                    <strong>File selected:</strong> <span class="filename"></span>
+                </div>
+            </div>
+            
+            <div class="format-example">
+                <strong>Expected format:</strong><br>
+                Branch,Level Category Base,Count<br>
+                BB,Advance,6<br>
+                CCK,L1,12
+            </div>
+        </div>
+
+        <!-- Popular Timeslots CSV -->
+        <div class="upload-section">
+            <h5><i class="bi bi-clock"></i> Popular Timeslots</h5>
+            <p class="text-muted">Upload preferred time slots for different class levels.</p>
+            
+            <div class="file-upload-card">
+                <div class="file-input-wrapper">
+                    {{ form.popular_timeslots_csv(class="form-control", id="popular_timeslots_csv") }}
+                    <label for="popular_timeslots_csv" class="file-input-label">
+                        <i class="bi bi-cloud-upload"></i> Choose Popular Timeslots CSV
+                    </label>
+                </div>
+                <div id="popular_timeslots_info" class="file-info d-none">
+                    <strong>File selected:</strong> <span class="filename"></span>
+                </div>
+            </div>
+            
+            <div class="format-example">
+                <strong>Expected format:</strong><br>
+                time_slot,day,level<br>
+                08:30-12:30,WED,Tots<br>
+                15:00-16:00,SAT,L1
+            </div>
+        </div>
+
+        <div class="text-center">
+            {{ form.submit(class="btn btn-primary btn-lg px-5") }}
+            <a href="{{ url_for('pages.timetable') }}" class="btn btn-outline-secondary btn-lg px-5 ms-3">Cancel</a>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+            </div>
+            <p class="text-center mt-2 text-muted">Processing files...</p>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// File input handlers
+document.querySelectorAll('input[type="file"]').forEach(input => {
+    input.addEventListener('change', function() {
+        const fileInfo = document.getElementById(this.id + '_info');
+        const filename = fileInfo.querySelector('.filename');
+        
+        if (this.files.length > 0) {
+            filename.textContent = this.files[0].name;
+            fileInfo.classList.remove('d-none');
+        } else {
+            fileInfo.classList.add('d-none');
+        }
+    });
+});
+
+// Form submission handler
+document.getElementById('uploadForm').addEventListener('submit', function() {
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const progressContainer = document.querySelector('.progress-container');
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Processing...';
+    progressContainer.style.display = 'block';
+    
+    // Simulate progress (since we can't track actual upload progress easily)
+    let progress = 0;
+    const progressBar = document.querySelector('.progress-bar');
+    const interval = setInterval(() => {
+        progress += Math.random() * 30;
+        if (progress > 90) progress = 90;
+        progressBar.style.width = progress + '%';
+        
+        if (progress >= 90) {
+            clearInterval(interval);
+        }
+    }, 500);
+});
+
+// Drag and drop functionality
+document.querySelectorAll('.file-upload-card').forEach(card => {
+    const input = card.querySelector('input[type="file"]');
+    
+    card.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+    
+    card.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+    });
+    
+    card.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            input.files = files;
+            input.dispatchEvent(new Event('change'));
+        }
+    });
+});
+</script>
+{% endblock %}
