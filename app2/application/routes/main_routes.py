@@ -39,31 +39,46 @@ def generate():
     try:
         print(f"Timetable generation requested at {datetime.now()}")
         
-        # Initialize the timetabling service
-        timetabling_service = TimetablingService()
+        # Get algorithm type from query parameters (default to enhanced)
+        algorithm_type = request.args.get('algorithm', 'enhanced')
+        use_csv_export = request.args.get('use_csv', 'true').lower() == 'true'
         
-        # Generate the timetable
-        schedule = timetabling_service.generate_timetable()
+        print(f"Algorithm type: {algorithm_type}, Use CSV: {use_csv_export}")
         
-        # Validate the generated schedule
-        validation_results = timetabling_service.validate_schedule(schedule)
+        if algorithm_type == 'enhanced':
+            # Use the new Enhanced Strict Constraint Scheduler
+            from application.services.enhanced_timetabling_service import EnhancedTimetablingService
+            
+            enhanced_service = EnhancedTimetablingService(use_csv_export=use_csv_export)
+            response = enhanced_service.generate_timetable(algorithm_type='enhanced')
+            
+        else:
+            # Use the legacy algorithm
+            timetabling_service = TimetablingService()
+            
+            # Generate the timetable
+            schedule = timetabling_service.generate_timetable()
+            
+            # Validate the generated schedule
+            validation_results = timetabling_service.validate_schedule(schedule)
+            
+            # Generate summary
+            summary = timetabling_service.get_schedule_summary(schedule)
+            summary['generation_time'] = datetime.now().isoformat()
+            
+            response = {
+                'success': True,
+                'schedule': schedule,
+                'validation': validation_results,
+                'summary': summary,
+                'generated_at': datetime.now().isoformat(),
+                'algorithm_type': 'legacy'
+            }
+            
+            # For compatibility with frontend, also include the schedule data at the root level
+            response.update(schedule)
         
-        # Generate summary
-        summary = timetabling_service.get_schedule_summary(schedule)
-        summary['generation_time'] = datetime.now().isoformat()
-        
-        response = {
-            'success': True,
-            'schedule': schedule,
-            'validation': validation_results,
-            'summary': summary,
-            'generated_at': datetime.now().isoformat()
-        }
-        
-        # For compatibility with frontend, also include the schedule data at the root level
-        response.update(schedule)
-        
-        print(f"Timetable generation completed successfully")
+        print(f"Timetable generation completed successfully using {algorithm_type} algorithm")
         return jsonify(response)
         
     except Exception as e:
@@ -71,7 +86,28 @@ def generate():
         print(f"Timetable generation failed: {error_message}")
         print(f"Traceback: {traceback.format_exc()}")
         
-        # Fallback to basic hardcoded schedule in case of error
+        # Try fallback to legacy algorithm if enhanced fails
+        try:
+            if algorithm_type == 'enhanced':
+                print("Enhanced algorithm failed, trying legacy fallback...")
+                timetabling_service = TimetablingService()
+                schedule = timetabling_service.generate_timetable()
+                
+                response = {
+                    'success': True,
+                    'schedule': schedule,
+                    'validation': {'valid': True, 'warnings': ['Used legacy fallback']},
+                    'summary': {'generation_time': datetime.now().isoformat()},
+                    'generated_at': datetime.now().isoformat(),
+                    'algorithm_type': 'legacy_fallback',
+                    'note': 'Enhanced algorithm failed, used legacy as fallback'
+                }
+                response.update(schedule)
+                return jsonify(response)
+        except Exception as fallback_error:
+            print(f"Legacy fallback also failed: {fallback_error}")
+        
+        # Ultimate fallback to basic hardcoded schedule
         fallback_schedule = {
             'CCK': {
                 'coaches': ['Chris', 'Yenzen'],
@@ -92,7 +128,192 @@ def generate():
             'success': False,
             'error': error_message,
             'fallback_schedule': fallback_schedule,
+            'generated_at': datetime.now().isoformat(),
+            'algorithm_type': 'hardcoded_fallback'
+        }), 500
+
+# Enhanced timetable generation endpoint with detailed configuration
+@api_bp.route('/generate/enhanced', methods=['GET', 'POST'])
+def generate_enhanced():
+    """Generate timetable using the Enhanced Strict Constraint Scheduler with configuration options."""
+    try:
+        print(f"Enhanced timetable generation requested at {datetime.now()}")
+        
+        # Get configuration from request
+        if request.method == 'POST':
+            config = request.get_json() or {}
+        else:
+            config = {}
+        
+        use_csv_export = config.get('use_csv_export', True)
+        workload_limits = config.get('workload_limits', {})
+        algorithm_params = config.get('algorithm_params', {})
+        
+        print(f"Enhanced algorithm configuration: {config}")
+        
+        # Initialize enhanced service
+        from application.services.enhanced_timetabling_service import EnhancedTimetablingService
+        
+        enhanced_service = EnhancedTimetablingService(use_csv_export=use_csv_export)
+        
+        # Update configuration if provided
+        if workload_limits or algorithm_params:
+            current_config = enhanced_service.get_algorithm_configuration()
+            if workload_limits:
+                current_config['workload_limits'].update(workload_limits)
+            if algorithm_params:
+                current_config['algorithm'].update(algorithm_params)
+            enhanced_service.update_algorithm_configuration(current_config)
+        
+        # Generate enhanced timetable
+        response = enhanced_service.generate_timetable(algorithm_type='enhanced')
+        
+        # Add configuration info to response
+        response['configuration_used'] = enhanced_service.get_algorithm_configuration()
+        response['supported_features'] = enhanced_service.get_supported_features()
+        
+        print(f"Enhanced timetable generation completed successfully")
+        return jsonify(response)
+        
+    except Exception as e:
+        error_message = str(e)
+        print(f"Enhanced timetable generation failed: {error_message}")
+        print(f"Traceback: {traceback.format_exc()}")
+        
+        return jsonify({
+            'success': False,
+            'error': error_message,
+            'algorithm_type': 'enhanced',
             'generated_at': datetime.now().isoformat()
+        }), 500
+
+# Algorithm information endpoint
+@api_bp.route('/algorithms', methods=['GET'])
+def get_algorithms():
+    """Get information about available scheduling algorithms."""
+    try:
+        from application.services.enhanced_timetabling_service import EnhancedTimetablingService
+        
+        enhanced_service = EnhancedTimetablingService()
+        
+        algorithms = {
+            'enhanced': {
+                'name': 'Enhanced Strict Constraint Scheduler',
+                'version': '1.0',
+                'description': 'Advanced 6-phase optimization algorithm with strict constraint compliance',
+                'features': enhanced_service.get_supported_features(),
+                'configuration': enhanced_service.get_algorithm_configuration(),
+                'endpoint': '/api/generate/enhanced'
+            },
+            'legacy': {
+                'name': 'Legacy Scheduler',
+                'version': '1.0',
+                'description': 'Original scheduling algorithm with basic optimization',
+                'features': ['Basic optimization', 'Coverage maximization'],
+                'endpoint': '/api/generate?algorithm=legacy'
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'algorithms': algorithms,
+            'default': 'enhanced'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# Enhanced schedule validation endpoint
+@api_bp.route('/validate/schedule', methods=['POST'])
+def validate_schedule():
+    """Perform comprehensive validation on a generated schedule."""
+    try:
+        data = request.get_json()
+        schedule = data.get('schedule', [])
+        config = data.get('config', {})
+        
+        if not schedule:
+            return jsonify({
+                'success': False,
+                'error': 'No schedule provided for validation'
+            }), 400
+        
+        from application.services.enhanced_validation import ScheduleValidator
+        
+        validator = ScheduleValidator(schedule, config)
+        validation_result = validator.validate_comprehensive()
+        
+        return jsonify({
+            'success': True,
+            'validation': validation_result,
+            'schedule_size': len(schedule),
+            'validated_at': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# Configuration management endpoints
+@api_bp.route('/config/presets', methods=['GET'])
+def get_config_presets():
+    """Get predefined configuration presets for the enhanced algorithm."""
+    try:
+        from application.services.enhanced_validation import ConfigurationManager
+        
+        presets = {
+            'default': ConfigurationManager.get_default_config(),
+            'conservative': ConfigurationManager.get_conservative_config(),
+            'aggressive': ConfigurationManager.get_aggressive_config()
+        }
+        
+        return jsonify({
+            'success': True,
+            'presets': presets,
+            'descriptions': {
+                'default': 'Balanced configuration with standard workload limits',
+                'conservative': 'Stricter limits for better work-life balance',
+                'aggressive': 'Higher limits for maximum coverage and utilization'
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@api_bp.route('/config/validate', methods=['POST'])
+def validate_config():
+    """Validate a configuration before using it."""
+    try:
+        config = request.get_json()
+        
+        if not config:
+            return jsonify({
+                'success': False,
+                'error': 'No configuration provided'
+            }), 400
+        
+        from application.services.enhanced_validation import ConfigurationManager
+        
+        validation_result = ConfigurationManager.validate_config(config)
+        
+        return jsonify({
+            'success': True,
+            'validation': validation_result,
+            'config_valid': validation_result['valid']
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
         }), 500
 
 @api_bp.route('/coach')
