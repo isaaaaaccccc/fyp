@@ -2,9 +2,9 @@ from flask import Blueprint, render_template, request, flash, redirect, jsonify,
 from application import db, bcrypt
 from application.models import User
 from flask_login import login_user, logout_user, login_required
-from .forms import CoachFilter, CoachDetails
-from .models import Coach, Level, Branch, CoachBranch, CoachOffday, CoachPreference
-from .services.timetabling_service import TimetablingService
+from application.forms import CoachFilter, CoachDetails
+from application.models import Coach, Level, Branch, CoachBranch, CoachOffday, CoachPreference
+from application.services.timetabling_service import TimetablingService
 import traceback
 from datetime import datetime
 

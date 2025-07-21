@@ -1,0 +1,614 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<style>
+    .level-card {
+        transition: transform 0.2s ease;
+    }
+    .level-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .hierarchy-item {
+        border-left: 4px solid #007bff;
+        padding: 0.5rem 1rem;
+        margin-bottom: 0.5rem;
+        background-color: #f8f9fa;
+    }
+    .hierarchy-item.missing {
+        border-left-color: #dc3545;
+        background-color: #fff5f5;
+    }
+    .table-actions {
+        white-space: nowrap;
+    }
+    .modal-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .duration-display {
+        font-size: 0.9em;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Level Management</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="/">Home</a></li>
+                        <li class="breadcrumb-item">Data</li>
+                        <li class="breadcrumb-item active">Level</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <h3 id="total-levels">{{ levels|length }}</h3>
+                            <p class="mb-0">Total Levels</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h3 id="total-capacity">0</h3>
+                            <p class="mb-0">Total Capacity</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h3 id="levels-with-coaches">0</h3>
+                            <p class="mb-0">With Coaches</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <h3 id="hierarchy-complete">0%</h3>
+                            <p class="mb-0">Hierarchy Complete</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Levels Table -->
+                <div class="col-md-8">
+                    <!-- Action Bar -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#levelModal" onclick="openCreateModal()">
+                                        <i class="bi bi-plus-circle"></i> Add New Level
+                                    </button>
+                                    <button type="button" class="btn btn-info ms-2" onclick="refreshData()">
+                                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" placeholder="Search levels..." id="search-input">
+                                        <button class="btn btn-outline-secondary" type="button">
+                                            <i class="bi bi-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Levels Table -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Levels List</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover" id="levels-table">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Level Name</th>
+                                            <th>Max Students</th>
+                                            <th>Duration</th>
+                                            <th>Coaches</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="levels-tbody">
+                                        <!-- Data will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level Hierarchy -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Level Hierarchy</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small">Standard progression order for gymnastics levels:</p>
+                            <div id="hierarchy-container">
+                                <!-- Hierarchy will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Level Modal -->
+<div class="modal fade" id="levelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Add New Level</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="levelForm">
+                    <div class="mb-3">
+                        <label for="levelName" class="form-label">Level Name</label>
+                        <select class="form-select" id="levelName" required>
+                            <option value="">Select a level...</option>
+                            <option value="Tots">BearyTots</option>
+                            <option value="Jolly">Jolly</option>
+                            <option value="Bubbly">Bubbly</option>
+                            <option value="Lively">Lively</option>
+                            <option value="Flexi">Flexi</option>
+                            <option value="L1">Level 1</option>
+                            <option value="L2">Level 2</option>
+                            <option value="L3">Level 3</option>
+                            <option value="L4">Level 4</option>
+                            <option value="Advance">Advanced</option>
+                            <option value="Free">Free</option>
+                            <option value="custom">Custom Level Name</option>
+                        </select>
+                        <input type="text" class="form-control mt-2" id="customLevelName" placeholder="Enter custom level name" style="display: none;" maxlength="32">
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="maxStudents" class="form-label">Maximum Students</label>
+                        <input type="number" class="form-control" id="maxStudents" required min="1" max="50" value="10">
+                        <div class="form-text">Maximum number of students per class</div>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="duration" class="form-label">Duration</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <select class="form-select" id="duration" required>
+                                    <option value="2">60 minutes (2 slots)</option>
+                                    <option value="3">90 minutes (3 slots)</option>
+                                    <option value="1">30 minutes (1 slot)</option>
+                                    <option value="4">120 minutes (4 slots)</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <input type="number" class="form-control" id="customDuration" placeholder="Custom slots" min="1" max="6" style="display: none;">
+                            </div>
+                        </div>
+                        <div class="form-text">Class duration in 30-minute time slots</div>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveButton">Save Level</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Level Details Modal -->
+<div class="modal fade" id="levelDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Level Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="levelDetailsContent">
+                <!-- Details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let editingLevelId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadLevels();
+    loadStatistics();
+    loadHierarchy();
+    
+    // Search functionality
+    document.getElementById('search-input').addEventListener('input', filterLevels);
+    
+    // Form submission
+    document.getElementById('saveButton').addEventListener('click', saveLevel);
+    
+    // Level name selection handling
+    document.getElementById('levelName').addEventListener('change', function() {
+        const customInput = document.getElementById('customLevelName');
+        if (this.value === 'custom') {
+            customInput.style.display = 'block';
+            customInput.required = true;
+        } else {
+            customInput.style.display = 'none';
+            customInput.required = false;
+        }
+    });
+});
+
+function loadLevels() {
+    fetch('/database/level/api/list')
+        .then(response => response.json())
+        .then(levels => {
+            displayLevels(levels);
+        })
+        .catch(error => {
+            console.error('Error loading levels:', error);
+            showAlert('Error loading levels', 'danger');
+        });
+}
+
+function displayLevels(levels) {
+    const tbody = document.getElementById('levels-tbody');
+    
+    if (levels.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No levels found</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = levels.map(level => {
+        return `
+            <tr>
+                <td><strong>${level.name}</strong></td>
+                <td>${level.max_students}</td>
+                <td>
+                    ${level.duration_minutes} minutes
+                    <div class="duration-display">(${level.duration} slots)</div>
+                </td>
+                <td>
+                    <span class="badge bg-primary">${level.coach_count}</span>
+                </td>
+                <td class="table-actions">
+                    <button class="btn btn-sm btn-outline-info me-1" onclick="viewLevelDetails(${level.id})" title="View Details">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning me-1" onclick="editLevel(${level.id})" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteLevel(${level.id}, '${level.name}')" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function loadStatistics() {
+    fetch('/database/level/api/statistics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const stats = data.statistics;
+                document.getElementById('total-levels').textContent = stats.total_levels;
+                document.getElementById('total-capacity').textContent = stats.total_capacity;
+                document.getElementById('levels-with-coaches').textContent = stats.levels_with_coaches;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading statistics:', error);
+        });
+}
+
+function loadHierarchy() {
+    fetch('/database/level/api/hierarchy')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayHierarchy(data.hierarchy, data.total_defined);
+                
+                // Update hierarchy completion percentage
+                const completionPercentage = Math.round((data.total_defined / data.hierarchy.length) * 100);
+                document.getElementById('hierarchy-complete').textContent = completionPercentage + '%';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading hierarchy:', error);
+        });
+}
+
+function displayHierarchy(hierarchy, totalDefined) {
+    const container = document.getElementById('hierarchy-container');
+    
+    container.innerHTML = hierarchy.map(item => {
+        const statusClass = item.exists ? '' : 'missing';
+        const statusIcon = item.exists ? 
+            '<i class="bi bi-check-circle-fill text-success"></i>' : 
+            '<i class="bi bi-x-circle-fill text-danger"></i>';
+        
+        return `
+            <div class="hierarchy-item ${statusClass}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${item.position}. ${item.name}</strong>
+                        ${item.exists ? 
+                            `<div class="small text-muted">
+                                ${item.max_students} students, ${item.duration * 30}min, ${item.coach_count} coaches
+                             </div>` : 
+                            '<div class="small text-danger">Not defined</div>'
+                        }
+                    </div>
+                    <div>
+                        ${statusIcon}
+                        ${!item.exists ? 
+                            `<button class="btn btn-sm btn-outline-primary ms-2" onclick="createMissingLevel('${item.name}')">
+                                <i class="bi bi-plus"></i>
+                            </button>` : ''
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function filterLevels() {
+    const searchTerm = document.getElementById('search-input').value.toLowerCase();
+    const rows = document.querySelectorAll('#levels-tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+}
+
+function openCreateModal() {
+    editingLevelId = null;
+    document.getElementById('modalTitle').textContent = 'Add New Level';
+    document.getElementById('levelForm').reset();
+    document.getElementById('customLevelName').style.display = 'none';
+    clearValidation();
+}
+
+function createMissingLevel(levelName) {
+    editingLevelId = null;
+    document.getElementById('modalTitle').textContent = 'Add New Level';
+    document.getElementById('levelForm').reset();
+    
+    // Set the level name
+    document.getElementById('levelName').value = levelName;
+    
+    // Set default values based on level type
+    const defaults = {
+        'Tots': { maxStudents: 7, duration: 2 },
+        'Jolly': { maxStudents: 8, duration: 2 },
+        'Bubbly': { maxStudents: 8, duration: 2 },
+        'Lively': { maxStudents: 8, duration: 2 },
+        'Flexi': { maxStudents: 8, duration: 2 },
+        'L1': { maxStudents: 8, duration: 3 },
+        'L2': { maxStudents: 9, duration: 3 },
+        'L3': { maxStudents: 10, duration: 3 },
+        'L4': { maxStudents: 10, duration: 3 },
+        'Advance': { maxStudents: 10, duration: 3 },
+        'Free': { maxStudents: 10, duration: 3 }
+    };
+    
+    if (defaults[levelName]) {
+        document.getElementById('maxStudents').value = defaults[levelName].maxStudents;
+        document.getElementById('duration').value = defaults[levelName].duration;
+    }
+    
+    clearValidation();
+    new bootstrap.Modal(document.getElementById('levelModal')).show();
+}
+
+function editLevel(levelId) {
+    editingLevelId = levelId;
+    document.getElementById('modalTitle').textContent = 'Edit Level';
+    
+    fetch(`/database/level/api/${levelId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const level = data.level;
+                
+                // Check if it's a standard level name
+                const select = document.getElementById('levelName');
+                const option = Array.from(select.options).find(opt => opt.value === level.name);
+                
+                if (option) {
+                    select.value = level.name;
+                } else {
+                    select.value = 'custom';
+                    document.getElementById('customLevelName').style.display = 'block';
+                    document.getElementById('customLevelName').value = level.name;
+                    document.getElementById('customLevelName').required = true;
+                }
+                
+                document.getElementById('maxStudents').value = level.max_students;
+                document.getElementById('duration').value = level.duration;
+                
+                new bootstrap.Modal(document.getElementById('levelModal')).show();
+            } else {
+                showAlert(data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error loading level details', 'danger');
+        });
+}
+
+function saveLevel() {
+    const form = document.getElementById('levelForm');
+    if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+    }
+    
+    const levelSelect = document.getElementById('levelName');
+    const customName = document.getElementById('customLevelName');
+    
+    const levelData = {
+        name: levelSelect.value === 'custom' ? customName.value.trim() : levelSelect.value,
+        max_students: parseInt(document.getElementById('maxStudents').value),
+        duration: parseInt(document.getElementById('duration').value)
+    };
+    
+    const url = editingLevelId 
+        ? `/database/level/api/${editingLevelId}/update`
+        : '/database/level/api/create';
+    
+    const method = editingLevelId ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(levelData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('levelModal')).hide();
+            showAlert(data.message, 'success');
+            loadLevels();
+            loadStatistics();
+            loadHierarchy();
+        } else {
+            showAlert(data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Error saving level', 'danger');
+    });
+}
+
+function deleteLevel(levelId, levelName) {
+    if (confirm(`Are you sure you want to delete level "${levelName}"? This action cannot be undone.`)) {
+        fetch(`/database/level/api/${levelId}/delete`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(data.message, 'success');
+                loadLevels();
+                loadStatistics();
+                loadHierarchy();
+            } else {
+                showAlert(data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error deleting level', 'danger');
+        });
+    }
+}
+
+function viewLevelDetails(levelId) {
+    fetch(`/database/level/api/${levelId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const level = data.level;
+                const content = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Level Information</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>Name:</strong></td><td>${level.name}</td></tr>
+                                <tr><td><strong>Max Students:</strong></td><td>${level.max_students}</td></tr>
+                                <tr><td><strong>Duration:</strong></td><td>${level.duration_minutes} minutes (${level.duration} slots)</td></tr>
+                                <tr><td><strong>Coaches:</strong></td><td>${level.coach_count}</td></tr>
+                                <tr><td><strong>Capacity/Hour:</strong></td><td>${Math.round(level.max_students * (60 / level.duration_minutes))}</td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Coaches Who Prefer This Level</h6>
+                            ${level.preferred_by_coaches.length > 0 
+                                ? '<ul class="list-group list-group-flush">' + 
+                                  level.preferred_by_coaches.map(coach => `<li class="list-group-item">${coach}</li>`).join('') + 
+                                  '</ul>'
+                                : '<p class="text-muted">No coaches prefer this level</p>'
+                            }
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('levelDetailsContent').innerHTML = content;
+                new bootstrap.Modal(document.getElementById('levelDetailsModal')).show();
+            } else {
+                showAlert(data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error loading level details', 'danger');
+        });
+}
+
+function refreshData() {
+    loadLevels();
+    loadStatistics();
+    loadHierarchy();
+    showAlert('Data refreshed successfully', 'info');
+}
+
+function clearValidation() {
+    document.getElementById('levelForm').classList.remove('was-validated');
+    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+}
+
+function showAlert(message, type) {
+    // Create alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}
