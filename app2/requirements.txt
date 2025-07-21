@@ -1,11 +1,31 @@
-ipykernel
-pandas==2.2.3
+# Core Flask and web framework dependencies
 flask==3.1.0
 flask_sqlalchemy==3.1.1
 flask_wtf==1.2.2
-email-validator==2.2.0
 flask_bcrypt==1.0.1
 flask_login==0.6.3
-nbformat==5.10.4
-requests==2.32.3
+
+# Data processing and analysis
+pandas==2.2.3
+numpy>=1.26.0
+
+# Forms and validation
+email-validator==2.2.0
 wtforms-sqlalchemy==0.4.2
+
+# HTTP requests
+requests==2.32.3
+
+# Optimization libraries for scheduling/timetabling
+pulp>=2.7.0
+scipy>=1.11.0
+
+# Development tools
+pytest>=7.0.0
+pytest-flask>=1.2.0
+black>=23.0.0
+flake8>=6.0.0
+
+# Jupyter support (for development/analysis)
+ipykernel
+nbformat==5.10.4
