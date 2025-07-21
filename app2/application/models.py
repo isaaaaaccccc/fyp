@@ -86,39 +86,3 @@ class CoachPreference(db.Model):
 # class Timetable(db.Model):
 #     timetable_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 #     date_created = db.Column(db.DateTime, nullable=False, default=datetime.now)
-
-# =============================================================
-# ==================== Helper Methods ====================
-# =============================================================
-
-# Add helper methods to Coach class
-Coach.to_dict = lambda self: {
-    'id': self.id,
-    'name': self.name,
-    'residential_area': self.residential_area,
-    'position': self.position,
-    'status': self.status,
-    'assigned_branches': [cb.branch.abbrv for cb in self.assigned_branches],
-    'offdays': [{
-        'day': cd.day,
-        'am': cd.am,
-        'reason': cd.reason
-    } for cd in self.offdays],
-    'preferred_levels': [cl.level.name for cl in self.preferred_levels]
-}
-
-# Add helper methods to Branch class  
-Branch.to_dict = lambda self: {
-    'id': self.id,
-    'name': self.name,
-    'abbrv': self.abbrv,
-    'max_classes': self.max_classes
-}
-
-# Add helper methods to Level class
-Level.to_dict = lambda self: {
-    'id': self.id,
-    'name': self.name,
-    'max_students': self.max_students,
-    'duration': self.duration
-}

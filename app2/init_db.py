@@ -48,8 +48,8 @@ duration = {
     'Free': 1.5
 }
 
-coaches_df = pd.read_csv('../cleaned_data/coaches_df.csv')
-availability_df = pd.read_csv('../cleaned_data/availability_df.csv')
+coaches_df = pd.read_csv('../Updated Datasets/coaches_df.csv')
+availability_df = pd.read_csv('../Updated Datasets/availability_df.csv')
 availability_df = availability_df[availability_df['available'] == False]
 
 def main():
