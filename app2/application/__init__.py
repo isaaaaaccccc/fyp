@@ -1,38 +1,35 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
 from flask_bcrypt import Bcrypt
-from flask_login import current_user, LoginManager
 
+# Initialize extensions
 db = SQLAlchemy()
-bcrypt = Bcrypt()
 login_manager = LoginManager()
+csrf = CSRFProtect()
+bcrypt = Bcrypt()
 
-def create_app(config_path='config.cfg'):
+def create_app():
     app = Flask(__name__)
-    app.config.from_pyfile(config_path)
-
+    
+    # Configuration
+    app.config['SECRET_KEY'] = 'your-secret-key'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'your-database-uri'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # Initialize extensions
     db.init_app(app)
-    bcrypt.init_app(app)
     login_manager.init_app(app)
-    login_manager.login_view = '/'
-
-    with app.app_context():
-        from .models import User, Branch, Level, Coach, CoachBranch, CoachOffday, CoachPreference
-        db.create_all()
-        db.session.commit()
-
-    # from application.forms import LoginForm, RegisterForm
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(int(user_id))
-
-    @app.context_processor
-    def get_user():
-        return {'user': current_user}
-
+    csrf.init_app(app)
+    bcrypt.init_app(app)
+    
+    # Register blueprints
     from application.routes import pages_bp, api_bp
+    from application.timetable_routes import timetable_bp
+    
     app.register_blueprint(pages_bp)
     app.register_blueprint(api_bp)
+    app.register_blueprint(timetable_bp)
     
     return app

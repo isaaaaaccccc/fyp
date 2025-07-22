@@ -4,8 +4,11 @@ from application import db, bcrypt
 from application.models import User, Coach, Level, Branch, CoachBranch, CoachOffday, CoachPreference, Availability, BranchConfig, Enrollment, PopularTimeslot
 from flask_login import login_user, logout_user, login_required
 from .forms import CoachFilter, CoachDetails, DataUploadForm
+from .data_processor import load_database_driven
+from .timetable_scheduler import execute_enhanced_strict_constraint_scheduling
 import pandas as pd
 import os
+import json
 
 pages_bp = Blueprint('pages', __name__)
 api_bp = Blueprint('apis', __name__, url_prefix='/api')
@@ -34,172 +37,447 @@ def coach_db():
 def data_upload():
     form = DataUploadForm()
     
-    if form.validate_on_submit():
-        try:
-            upload_results = []
-            
-            # Process Availability file
-            if form.availability_file.data:
-                result = process_availability_file(form.availability_file.data)
-                upload_results.append(result)
-            
-            # Process Branch Config file
-            if form.branch_config_file.data:
-                result = process_branch_config_file(form.branch_config_file.data)
-                upload_results.append(result)
-            
-            # Process Coaches file
-            if form.coaches_file.data:
-                result = process_coaches_file(form.coaches_file.data)
-                upload_results.append(result)
-            
-            # Process Enrollment file
-            if form.enrollment_file.data:
-                result = process_enrollment_file(form.enrollment_file.data)
-                upload_results.append(result)
-            
-            # Process Popular Timeslots file
-            if form.popular_timeslots_file.data:
-                result = process_popular_timeslots_file(form.popular_timeslots_file.data)
-                upload_results.append(result)
-            
-            if upload_results:
-                db.session.commit()
-                flash(f'Successfully processed {len(upload_results)} file(s)!', 'success')
-            else:
-                flash('No files were uploaded.', 'warning')
-                
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error processing files: {str(e)}', 'error')
+    if request.method == 'GET':
+        return render_template('data_upload.html', form=form)
     
-    return render_template('data_upload.html', form=form)
+    # Handle POST request
+    print("🚀 Data upload POST request received")
+    print(f"📋 Request files: {list(request.files.keys())}")
+    print(f"📋 Form validation: {form.validate_on_submit()}")
+    
+    # Check if this is an AJAX request
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.content_type == 'application/json'
+    
+    if not form.validate_on_submit():
+        print(f"❌ Form validation failed: {form.errors}")
+        if is_ajax:
+            return jsonify({
+                'success': False,
+                'message': 'Form validation failed. Please check your files and try again.',
+                'errors': form.errors
+            }), 400
+        else:
+            flash('Form validation failed. Please check your files and try again.', 'error')
+            return render_template('data_upload.html', form=form)
+    
+    try:
+        upload_results = []
+        processed_files = []
+        
+        print("✅ Form validation passed, processing files...")
+        
+        # Process each file type
+        file_processors = [
+            ('availability_file', process_availability_file),
+            ('branch_config_file', process_branch_config_file),
+            ('coaches_file', process_coaches_file),
+            ('enrollment_file', process_enrollment_file),
+            ('popular_timeslots_file', process_popular_timeslots_file)
+        ]
+        
+        for field_name, processor_func in file_processors:
+            field = getattr(form, field_name)
+            if field.data and hasattr(field.data, 'filename') and field.data.filename:
+                try:
+                    print(f"📁 Processing {field_name}: {field.data.filename}")
+                    # Reset file pointer to beginning
+                    field.data.seek(0)
+                    result = processor_func(field.data)
+                    upload_results.append(result)
+                    processed_files.append({
+                        'field': field_name,
+                        'filename': field.data.filename,
+                        'result': result
+                    })
+                    print(f"✅ {field_name} result: {result}")
+                except Exception as e:
+                    print(f"❌ Error processing {field_name}: {str(e)}")
+                    raise Exception(f"Error processing {field.data.filename}: {str(e)}")
+        
+        if upload_results:
+            # Commit all changes
+            db.session.commit()
+            success_message = f'Successfully processed {len(upload_results)} file(s)!'
+            print(f"✅ {success_message}")
+            
+            if is_ajax:
+                return jsonify({
+                    'success': True,
+                    'message': success_message,
+                    'processed_files': processed_files,
+                    'file_count': len(upload_results)
+                })
+            else:
+                flash(success_message, 'success')
+                return redirect(url_for('pages.data_upload'))
+        else:
+            error_message = 'No files were uploaded. Please select at least one CSV file.'
+            print(f"❌ {error_message}")
+            
+            if is_ajax:
+                return jsonify({
+                    'success': False,
+                    'message': error_message,
+                    'processed_files': [],
+                    'file_count': 0
+                }), 400
+            else:
+                flash(error_message, 'warning')
+                return render_template('data_upload.html', form=form)
+                
+    except Exception as e:
+        db.session.rollback()
+        error_msg = f'Error processing files: {str(e)}'
+        print(f"❌ Exception occurred: {error_msg}")
+        import traceback
+        traceback.print_exc()
+        
+        if is_ajax:
+            return jsonify({
+                'success': False,
+                'message': error_msg,
+                'processed_files': [],
+                'file_count': 0
+            }), 500
+        else:
+            flash(error_msg, 'error')
+            return render_template('data_upload.html', form=form)
 
+# API Routes for Timetable Generation
+@api_bp.route('/generate-timetable/', methods=['POST'])
+def generate_timetable():
+    """Generate timetable using the scheduling algorithm"""
+    try:
+        print("🚀 Starting timetable generation...")
+        
+        # Load data from database
+        print("📊 Loading data from database...")
+        data = load_database_driven()
+        
+        # Run the scheduling algorithm
+        print("⚙️ Running enhanced strict constraint scheduling...")
+        results = execute_enhanced_strict_constraint_scheduling(data)
+        
+        # Format for timetable display
+        formatted_schedule = format_schedule_for_display(results['schedule'])
+        
+        return jsonify({
+            'success': True,
+            'message': 'Timetable generated successfully',
+            'schedule': formatted_schedule,
+            'statistics': results['statistics'],
+            'total_classes': len(results['schedule']),
+            'coverage_percentage': results['statistics']['coverage_percentage']
+        })
+        
+    except Exception as e:
+        import traceback
+        error_msg = f"Error generating timetable: {str(e)}"
+        print(f"❌ {error_msg}")
+        traceback.print_exc()
+        
+        return jsonify({
+            'success': False,
+            'message': error_msg,
+            'error': str(e)
+        }), 500
+
+@api_bp.route('/export-timetable/', methods=['GET'])
+def export_timetable():
+    """Export current timetable to CSV"""
+    try:
+        # Load data from database
+        data = load_database_driven()
+        
+        # Run the scheduling algorithm
+        results = execute_enhanced_strict_constraint_scheduling(data)
+        
+        # Create CSV
+        df = pd.DataFrame(results['schedule'])
+        
+        # Save to static folder for download
+        csv_path = os.path.join('application', 'static', 'exports', 'timetable.csv')
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+        df.to_csv(csv_path, index=False)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Timetable exported successfully',
+            'download_url': '/static/exports/timetable.csv',
+            'filename': 'timetable.csv'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f"Error exporting timetable: {str(e)}"
+        }), 500
+
+def format_schedule_for_display(schedule):
+    """Format schedule data for timetable.js display"""
+    formatted_classes = []
+    
+    # Day mapping for proper ordering
+    day_order = {'TUE': 1, 'WED': 2, 'THU': 3, 'FRI': 4, 'SAT': 5, 'SUN': 6}
+    
+    # Branch color mapping
+    branch_colors = {
+        'BB': '#FF6B6B',    # Red
+        'CCK': '#4ECDC4',   # Teal
+        'CH': '#45B7D1',    # Blue
+        'HG': '#96CEB4',    # Green
+        'KT': '#FFEAA7',    # Yellow
+        'PR': '#DDA0DD'     # Purple
+    }
+    
+    for entry in schedule:
+        # Convert to format expected by timetable.js
+        formatted_entry = {
+            'id': f"class_{entry.get('id', len(formatted_classes))}",
+            'branch': entry['Branch'],
+            'level': entry['Gymnastics Level'],
+            'day': entry['Day'],
+            'dayOrder': day_order.get(entry['Day'], 7),
+            'startTime': entry['Start Time'],
+            'endTime': entry['End Time'],
+            'duration': entry.get('Duration (min)', 60),
+            'coach': {
+                'id': entry['Coach ID'],
+                'name': entry['Coach Name'],
+                'status': entry['Coach Status']
+            },
+            'students': entry['Students'],
+            'capacity': entry['Capacity'],
+            'isPopular': entry.get('Popular Slot', 'No') == 'Yes',
+            'isMerged': entry.get('Merged', 'No') == 'Yes',
+            'mergedWith': entry.get('Merged With', ''),
+            'color': branch_colors.get(entry['Branch'], '#95A5A6'),
+            'utilization': round((entry['Students'] / entry['Capacity']) * 100, 1) if entry['Capacity'] > 0 else 0
+        }
+        
+        formatted_classes.append(formatted_entry)
+    
+    # Sort by day and time
+    formatted_classes.sort(key=lambda x: (x['dayOrder'], x['startTime']))
+    
+    return formatted_classes
+
+# File processing functions (same as before but with better error handling)
 def process_availability_file(file):
     """Process availability CSV file"""
-    df = pd.read_csv(file)
-    
-    # Use no_autoflush to prevent premature flushing
-    with db.session.no_autoflush:
-        # Clear existing availability data first
-        db.session.query(Availability).delete()
+    try:
+        df = pd.read_csv(file)
+        print(f"📊 Loaded {len(df)} rows from availability CSV")
         
-        for _, row in df.iterrows():
-            # Handle NaN values for restriction_reason
-            restriction_reason = row.get('restriction_reason')
-            if pd.isna(restriction_reason):
-                restriction_reason = None
+        if df.empty:
+            raise ValueError("CSV file is empty")
+        
+        # Validate required columns
+        required_columns = ['availability_id', 'coach_id', 'day', 'period', 'available']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            raise ValueError(f"Missing required columns: {', '.join(missing_columns)}")
+        
+        with db.session.no_autoflush:
+            # Clear existing availability data
+            deleted_count = db.session.query(Availability).delete()
+            print(f"🗑️ Deleted {deleted_count} existing availability records")
             
-            # Check if this coach-day-period combination already exists
-            existing = db.session.query(Availability).filter_by(
-                coach_id=int(row['coach_id']),
-                day=str(row['day']),
-                period=str(row['period'])
-            ).first()
-            
-            if existing:
-                # Update existing record
-                existing.available = bool(row['available'])
-                existing.restriction_reason = restriction_reason
-                existing.original_availability_id = int(row['availability_id'])
-            else:
-                # Create new record
-                availability = Availability(
-                    original_availability_id=int(row['availability_id']),
-                    coach_id=int(row['coach_id']),
-                    day=str(row['day']),
-                    period=str(row['period']),
-                    available=bool(row['available']),
-                    restriction_reason=restriction_reason
-                )
-                db.session.add(availability)
-    
-    return f"Processed {len(df)} availability records"
+            processed_count = 0
+            for _, row in df.iterrows():
+                try:
+                    # Handle NaN values
+                    restriction_reason = row.get('restriction_reason')
+                    if pd.isna(restriction_reason):
+                        restriction_reason = None
+                    
+                    # Create new record
+                    availability = Availability(
+                        original_availability_id=int(row['availability_id']),
+                        coach_id=int(row['coach_id']),
+                        day=str(row['day']).strip(),
+                        period=str(row['period']).strip(),
+                        available=bool(row['available']),
+                        restriction_reason=restriction_reason
+                    )
+                    db.session.add(availability)
+                    processed_count += 1
+                except Exception as e:
+                    print(f"❌ Error processing row {processed_count + 1}: {e}")
+                    continue
+        
+        return f"Processed {processed_count} availability records"
+    except Exception as e:
+        print(f"❌ Error in process_availability_file: {e}")
+        raise
 
 def process_branch_config_file(file):
     """Process branch config CSV file"""
-    df = pd.read_csv(file)
-    
-    with db.session.no_autoflush:
-        # Clear existing branch config data
-        db.session.query(BranchConfig).delete()
+    try:
+        df = pd.read_csv(file)
+        print(f"📊 Loaded {len(df)} rows from branch config CSV")
         
-        for _, row in df.iterrows():
-            config = BranchConfig(
-                branch=str(row['branch']),
-                max_classes_per_slot=int(row['max_classes_per_slot'])
-            )
-            db.session.add(config)
-    
-    return f"Processed {len(df)} branch configurations"
+        if df.empty:
+            raise ValueError("CSV file is empty")
+        
+        # Validate required columns
+        required_columns = ['branch', 'max_classes_per_slot']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            raise ValueError(f"Missing required columns: {', '.join(missing_columns)}")
+        
+        with db.session.no_autoflush:
+            # Clear existing branch config data
+            deleted_count = db.session.query(BranchConfig).delete()
+            print(f"🗑️ Deleted {deleted_count} existing branch config records")
+            
+            processed_count = 0
+            for _, row in df.iterrows():
+                try:
+                    config = BranchConfig(
+                        branch=str(row['branch']).strip(),
+                        max_classes_per_slot=int(row['max_classes_per_slot'])
+                    )
+                    db.session.add(config)
+                    processed_count += 1
+                except Exception as e:
+                    print(f"❌ Error processing row {processed_count + 1}: {e}")
+                    continue
+        
+        return f"Processed {processed_count} branch configurations"
+    except Exception as e:
+        print(f"❌ Error in process_branch_config_file: {e}")
+        raise
 
 def process_coaches_file(file):
     """Process coaches CSV file"""
-    df = pd.read_csv(file)
-    
-    processed_count = 0
-    
-    with db.session.no_autoflush:
-        for _, row in df.iterrows():
-            # Check if coach already exists
-            existing_coach = Coach.query.filter_by(id=int(row['coach_id'])).first()
-            
-            if existing_coach:
-                # Update existing coach
-                existing_coach.name = str(row['coach_name'])
-                existing_coach.residential_area = str(row['residential_area'])
-                existing_coach.position = str(row['position']) if not pd.isna(row['position']) else 'Part time'
-                existing_coach.status = str(row['status'])
-            else:
-                # Create new coach
-                coach = Coach(
-                    id=int(row['coach_id']),
-                    name=str(row['coach_name']),
-                    residential_area=str(row['residential_area']),
-                    position=str(row['position']) if not pd.isna(row['position']) else 'Part time',
-                    status=str(row['status'])
-                )
-                db.session.add(coach)
-            
-            processed_count += 1
-    
-    return f"Processed {processed_count} coach records"
+    try:
+        df = pd.read_csv(file)
+        print(f"📊 Loaded {len(df)} rows from coaches CSV")
+        
+        if df.empty:
+            raise ValueError("CSV file is empty")
+        
+        # Validate required columns
+        required_columns = ['coach_id', 'coach_name', 'residential_area', 'status']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            raise ValueError(f"Missing required columns: {', '.join(missing_columns)}")
+        
+        processed_count = 0
+        with db.session.no_autoflush:
+            for _, row in df.iterrows():
+                try:
+                    coach_id = int(row['coach_id'])
+                    existing_coach = Coach.query.filter_by(id=coach_id).first()
+                    
+                    # Handle position field
+                    position = str(row['position']) if 'position' in row and not pd.isna(row['position']) else 'Part time'
+                    
+                    if existing_coach:
+                        # Update existing coach
+                        existing_coach.name = str(row['coach_name']).strip()
+                        existing_coach.residential_area = str(row['residential_area']).strip()
+                        existing_coach.position = position.strip()
+                        existing_coach.status = str(row['status']).strip()
+                    else:
+                        # Create new coach
+                        coach = Coach(
+                            id=coach_id,
+                            name=str(row['coach_name']).strip(),
+                            residential_area=str(row['residential_area']).strip(),
+                            position=position.strip(),
+                            status=str(row['status']).strip()
+                        )
+                        db.session.add(coach)
+                    
+                    processed_count += 1
+                except Exception as e:
+                    print(f"❌ Error processing coach row {processed_count + 1}: {e}")
+                    continue
+        
+        return f"Processed {processed_count} coach records"
+    except Exception as e:
+        print(f"❌ Error in process_coaches_file: {e}")
+        raise
 
 def process_enrollment_file(file):
     """Process enrollment CSV file"""
-    df = pd.read_csv(file)
-    
-    with db.session.no_autoflush:
-        # Clear existing enrollment data
-        db.session.query(Enrollment).delete()
+    try:
+        df = pd.read_csv(file)
+        print(f"📊 Loaded {len(df)} rows from enrollment CSV")
         
-        for _, row in df.iterrows():
-            enrollment = Enrollment(
-                branch=str(row['Branch']),
-                level_category_base=str(row['Level Category Base']),
-                count=int(row['Count'])
-            )
-            db.session.add(enrollment)
-    
-    return f"Processed {len(df)} enrollment records"
+        if df.empty:
+            raise ValueError("CSV file is empty")
+        
+        # Validate required columns
+        required_columns = ['Branch', 'Level Category Base', 'Count']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            raise ValueError(f"Missing required columns: {', '.join(missing_columns)}")
+        
+        with db.session.no_autoflush:
+            # Clear existing enrollment data
+            deleted_count = db.session.query(Enrollment).delete()
+            print(f"🗑️ Deleted {deleted_count} existing enrollment records")
+            
+            processed_count = 0
+            for _, row in df.iterrows():
+                try:
+                    enrollment = Enrollment(
+                        branch=str(row['Branch']).strip(),
+                        level_category_base=str(row['Level Category Base']).strip(),
+                        count=int(row['Count'])
+                    )
+                    db.session.add(enrollment)
+                    processed_count += 1
+                except Exception as e:
+                    print(f"❌ Error processing row {processed_count + 1}: {e}")
+                    continue
+        
+        return f"Processed {processed_count} enrollment records"
+    except Exception as e:
+        print(f"❌ Error in process_enrollment_file: {e}")
+        raise
 
 def process_popular_timeslots_file(file):
     """Process popular timeslots CSV file"""
-    df = pd.read_csv(file)
-    
-    with db.session.no_autoflush:
-        # Clear existing popular timeslots data
-        db.session.query(PopularTimeslot).delete()
+    try:
+        df = pd.read_csv(file)
+        print(f"📊 Loaded {len(df)} rows from popular timeslots CSV")
         
-        for _, row in df.iterrows():
-            timeslot = PopularTimeslot(
-                time_slot=str(row['time_slot']),
-                day=str(row['day']),
-                level=str(row['level'])
-            )
-            db.session.add(timeslot)
-    
-    return f"Processed {len(df)} popular timeslot records"
+        if df.empty:
+            raise ValueError("CSV file is empty")
+        
+        # Validate required columns
+        required_columns = ['time_slot', 'day', 'level']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            raise ValueError(f"Missing required columns: {', '.join(missing_columns)}")
+        
+        with db.session.no_autoflush:
+            # Clear existing popular timeslots data
+            deleted_count = db.session.query(PopularTimeslot).delete()
+            print(f"🗑️ Deleted {deleted_count} existing popular timeslot records")
+            
+            processed_count = 0
+            for _, row in df.iterrows():
+                try:
+                    timeslot = PopularTimeslot(
+                        time_slot=str(row['time_slot']).strip(),
+                        day=str(row['day']).strip(),
+                        level=str(row['level']).strip()
+                    )
+                    db.session.add(timeslot)
+                    processed_count += 1
+                except Exception as e:
+                    print(f"❌ Error processing row {processed_count + 1}: {e}")
+                    continue
+        
+        return f"Processed {processed_count} popular timeslot records"
+    except Exception as e:
+        print(f"❌ Error in process_popular_timeslots_file: {e}")
+        raise
 
 # Existing API endpoints
 @api_bp.route('/coach/')
@@ -242,54 +520,6 @@ def api_coach():
     
     return jsonify(coaches_data)
 
-# To replace with timetable generation algorithm
 @api_bp.route('/generate/', methods=['GET'])
 def generate():
-    return jsonify({
-        'CCK': {
-            'coaches': ['Chris', 'Yenzen', 'Vivian', 'Cheng Hong', 'Francis', 'Eugene'],
-            'schedule': {
-                'Tuesday': {
-                    'Yenzen': [
-                        {'name': 'L2', 'start_time': '1530', 'duration': 3},
-                        {'name': 'L2', 'start_time': '1700', 'duration': 3},
-                    ],
-                    'Vivian': [
-                        {'name': 'Lively', 'start_time': '1630', 'duration': 2},
-                        {'name': 'Bubbly', 'start_time': '1730', 'duration': 2},
-                    ],
-                    'Cheng Hong': [
-                        {'name': 'L1', 'start_time': '1530', 'duration': 3},
-                        {'name': 'Flexi', 'start_time': '1730', 'duration': 2},
-                    ],
-                },
-                'Wednesday': {
-                    'Yenzen': [
-                        {'name': 'L2', 'start_time': '1530', 'duration': 3},
-                        {'name': 'L2', 'start_time': '1700', 'duration': 3},
-                    ],
-                    'Vivian': [
-                        {'name': 'Flexi', 'start_time': '1600', 'duration': 2},
-                        {'name': 'Lively', 'start_time': '1700', 'duration': 2},
-                    ],
-                    'Chris': [
-                        {'name': 'L1', 'start_time': '1530', 'duration': 3},
-                        {'name': 'L1', 'start_time': '1700', 'duration': 3},
-                    ],
-                },
-                'Thursday': {
-                    'Chris': [
-                        {'name': 'L2', 'start_time': '1700', 'duration': 3},
-                    ],
-                    'Yenzen': [
-                        {'name': 'L3', 'start_time': '1530', 'duration': 3},
-                        {'name': 'L1', 'start_time': '1700', 'duration': 3},
-                    ],
-                    'Vivian': [
-                        {'name': 'Jolly', 'start_time': '1030', 'duration': 2},
-                        {'name': 'Bubbly', 'start_time': '1630', 'duration': 2},
-                    ],
-                }
-            }
-        }
-    })
+    return jsonify({'message': 'Timetable generation placeholder'})

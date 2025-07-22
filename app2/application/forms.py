@@ -2,7 +2,6 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms.fields import StringField, PasswordField, SubmitField, RadioField, IntegerField, SelectField, SelectMultipleField, BooleanField
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
-from wtforms.validators import DataRequired
 
 from application import db
 from .models import Branch, Coach, Level
@@ -65,7 +64,7 @@ class CoachDetails(FlaskForm):
                 field = BooleanField(label=f'{day} {half}')
                 setattr(self, field_name, field)
 
-# New upload forms
+# CSV Upload Forms
 class DataUploadForm(FlaskForm):
     availability_file = FileField(
         'Availability CSV',

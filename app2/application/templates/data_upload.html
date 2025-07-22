@@ -3,109 +3,41 @@
 {% block head %}
     <title>Data Upload - Swimming Coach Management</title>
     <style>
-        .upload-zone {
-            border: 2px dashed var(--line-color);
-            border-radius: 12px;
-            padding: 3rem 2rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            background-color: var(--hover-color);
-            margin-bottom: 1.5rem;
-            cursor: pointer;
-            position: relative;
-            min-height: 200px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .upload-zone:hover {
-            border-color: var(--active-color);
-            background-color: rgba(13, 110, 253, 0.05);
-            transform: translateY(-2px);
-        }
-
-        .upload-zone.dragover {
-            border-color: var(--active-color);
-            background-color: rgba(13, 110, 253, 0.1);
-            transform: scale(1.02);
-        }
-
-        .upload-zone input[type="file"] {
-            display: none;
-        }
-
-        .upload-zone-icon {
-            width: 64px;
-            height: 64px;
-            margin-bottom: 1rem;
-            opacity: 0.8;
-        }
-
-        .upload-zone-text {
-            font-size: 1.1rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .upload-zone-subtext {
-            font-size: 0.9rem;
-            color: var(--secondary-text-color);
-            margin-bottom: 1rem;
-        }
-
-        .file-info {
-            background-color: var(--hover-color);
-            border: 1px solid var(--line-color);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1rem;
-            display: none;
-            position: relative;
-        }
-
-        .file-info.show {
-            display: block;
-            animation: slideDown 0.3s ease;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .upload-progress {
-            display: none;
-            margin-top: 2rem;
-            padding: 1.5rem;
-            background-color: var(--hover-color);
-            border-radius: 8px;
-            border: 1px solid var(--line-color);
-        }
-
-        .upload-progress.show {
-            display: block;
-        }
-
         .upload-card {
             background-color: var(--sidebar-color);
-            border: 1px solid var(--line-color);
+            border: 2px solid var(--line-color);
             border-radius: 12px;
             padding: 2rem;
             margin-bottom: 2rem;
-            transition: all 0.3s ease;
+            transition: all 0.4s ease;
+            position: relative;
         }
 
         .upload-card:hover {
             border-color: var(--active-color);
             box-shadow: 0 4px 20px rgba(13, 110, 253, 0.1);
+        }
+
+        .upload-card.file-selected {
+            border-color: #ffc107;
+            background-color: rgba(255, 193, 7, 0.03);
+        }
+
+        .upload-card.uploading {
+            border-color: #0dcaf0;
+            background-color: rgba(13, 202, 240, 0.05);
+            animation: uploadPulse 2s infinite;
+        }
+
+        .upload-card.uploaded {
+            border-color: #198754;
+            background-color: rgba(25, 135, 84, 0.08);
+            box-shadow: 0 0 20px rgba(25, 135, 84, 0.2);
+        }
+
+        @keyframes uploadPulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(13, 202, 240, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(13, 202, 240, 0.5); }
         }
 
         .upload-card h5 {
@@ -115,6 +47,11 @@
             font-weight: 600;
             display: flex;
             align-items: center;
+            position: relative;
+        }
+
+        .upload-card.uploaded h5 {
+            color: #198754;
         }
 
         .upload-card h5 i {
@@ -122,22 +59,203 @@
             font-size: 1.2rem;
         }
 
-        .btn-upload {
-            background-color: var(--active-color);
-            border-color: var(--active-color);
+        .upload-status-indicator {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .upload-status-indicator.show {
+            opacity: 1;
+        }
+
+        .upload-status-indicator.selected {
+            background-color: #ffc107;
+            color: #856404;
+            border: 2px solid #ffcd39;
+        }
+
+        .upload-status-indicator.uploading {
+            background-color: #0dcaf0;
+            color: #055160;
+            border: 2px solid #25cff2;
+        }
+
+        .upload-status-indicator.uploaded {
+            background-color: #198754;
             color: white;
-            padding: 0.75rem 3rem;
-            font-size: 1.1rem;
-            font-weight: 500;
-            border-radius: 8px;
+            border: 2px solid #20c997;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-custom {
+            width: 100%;
+            padding: 1.5rem;
+            border: 2px dashed var(--line-color);
+            border-radius: 12px;
+            background-color: var(--hover-color);
+            text-align: center;
+            transition: all 0.4s ease;
+            cursor: pointer;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .file-input-custom:hover {
+            border-color: var(--active-color);
+            background-color: rgba(13, 110, 253, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .file-input-custom.has-file {
+            border-color: #ffc107;
+            background-color: rgba(255, 193, 7, 0.08);
+            border-style: solid;
+        }
+
+        .file-input-custom.uploading {
+            border-color: #0dcaf0;
+            background-color: rgba(13, 202, 240, 0.1);
+            border-style: solid;
+        }
+
+        .file-input-custom.uploaded {
+            border-color: #198754;
+            background-color: rgba(25, 135, 84, 0.15);
+            border-style: solid;
+        }
+
+        .file-input-custom .upload-icon {
+            font-size: 3rem;
+            color: var(--secondary-text-color);
+            margin-bottom: 1rem;
             transition: all 0.3s ease;
         }
 
-        .btn-upload:hover {
-            background-color: #0b5ed7;
-            border-color: #0a58ca;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+        .file-input-custom.has-file .upload-icon {
+            color: #ffc107;
+        }
+
+        .file-input-custom.uploading .upload-icon {
+            color: #0dcaf0;
+            animation: spin 1s linear infinite;
+        }
+
+        .file-input-custom.uploaded .upload-icon {
+            color: #198754;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .file-input-custom .upload-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-custom.uploaded .upload-text {
+            color: #198754;
+        }
+
+        .file-input-custom .upload-subtext {
+            font-size: 0.9rem;
+            color: var(--secondary-text-color);
+        }
+
+        .file-input-custom input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .cancel-upload-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            z-index: 20;
+        }
+
+        .cancel-upload-btn:hover {
+            background-color: #c82333;
+            transform: scale(1.1);
+        }
+
+        .cancel-upload-btn.show {
+            display: flex;
+        }
+
+        .file-info {
+            background-color: var(--hover-color);
+            border: 1px solid var(--line-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-info.uploaded {
+            background-color: rgba(25, 135, 84, 0.1);
+            border-color: #198754;
+        }
+
+        .file-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .file-stats {
+            font-size: 0.875rem;
+            color: var(--secondary-text-color);
         }
 
         .status-success {
@@ -147,8 +265,33 @@
             gap: 0.5rem;
         }
 
-        .status-error {
+        .status-uploaded {
+            color: #198754;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+
+        .status-uploading {
+            color: #0dcaf0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .remove-file {
+            background: none;
+            border: none;
             color: #dc3545;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .remove-file:hover {
+            background-color: rgba(220, 53, 69, 0.1);
         }
 
         .csv-sample {
@@ -173,6 +316,90 @@
             color: var(--active-color);
             display: block;
             margin-bottom: 0.5rem;
+        }
+
+        .btn-upload {
+            background-color: var(--active-color);
+            border-color: var(--active-color);
+            color: white;
+            padding: 0.75rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-upload:hover:not(:disabled) {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+        }
+
+        .btn-upload:disabled {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .upload-progress {
+            background-color: var(--hover-color);
+            border: 1px solid var(--line-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            display: none;
+        }
+
+        .upload-progress.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .upload-summary {
+            background-color: rgba(25, 135, 84, 0.1);
+            border: 2px solid #198754;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            display: none;
+        }
+
+        .upload-summary.show {
+            display: block;
+            animation: successBounce 0.6s ease;
+        }
+
+        @keyframes successBounce {
+            0% { opacity: 0; transform: scale(0.9) translateY(-20px); }
+            50% { transform: scale(1.02) translateY(-5px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .upload-summary h6 {
+            color: #198754;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .upload-summary ul {
+            margin-bottom: 0;
+            padding-left: 1.5rem;
+        }
+
+        .upload-summary li {
+            color: #0f5132;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
         }
 
         .page-header {
@@ -200,56 +427,29 @@
             gap: 2rem;
         }
 
-        .file-details {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
         }
 
-        .file-meta {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .file-name {
-            font-weight: 600;
-            color: var(--text-color);
-        }
-
-        .file-stats {
-            font-size: 0.875rem;
-            color: var(--secondary-text-color);
-        }
-
-        .remove-file {
-            background: none;
-            border: none;
-            color: #dc3545;
-            cursor: pointer;
-            padding: 0.25rem;
-            border-radius: 4px;
-            transition: all 0.2s ease;
-        }
-
-        .remove-file:hover {
-            background-color: rgba(220, 53, 69, 0.1);
-        }
-
-        /* Responsive adjustments */
         @media (max-width: 768px) {
             .upload-grid {
                 grid-template-columns: 1fr;
             }
             
-            .upload-zone {
-                padding: 2rem 1rem;
-                min-height: 150px;
+            .file-input-custom {
+                min-height: 120px;
+                padding: 1rem 0.5rem;
             }
             
             .page-title {
                 font-size: 2rem;
+            }
+
+            .upload-status-indicator {
+                width: 35px;
+                height: 35px;
+                font-size: 1.2rem;
             }
         }
     </style>
@@ -257,8 +457,8 @@
 
 {% block content %}
     <div class="page-header">
-        <h1 class="page-title">Data Upload</h1>
-        <p class="page-subtitle">Upload CSV files to update your coaching system data. Drag and drop files or click to browse.</p>
+        <h1 class="page-title">Data Upload Center</h1>
+        <p class="page-subtitle">Upload CSV files to update your coaching system data. Select files using the file pickers below.</p>
     </div>
 
     <!-- Flash Messages -->
@@ -273,21 +473,57 @@
         {% endif %}
     {% endwith %}
 
+    <!-- Upload Summary (shown after successful upload) -->
+    <div class="upload-summary" id="uploadSummary">
+        <h6>
+            <i class="bi bi-check-circle-fill"></i>
+            Upload Completed Successfully!
+        </h6>
+        <ul id="uploadSummaryList">
+            <!-- Dynamically populated with upload results -->
+        </ul>
+    </div>
+
+    <!-- Upload Progress -->
+    <div class="upload-progress" id="uploadProgress">
+        <h6 class="mb-3">
+            <i class="bi bi-upload me-2"></i>
+            Processing Files...
+            <span class="spinner-border spinner-border-sm ms-2" role="status"></span>
+        </h6>
+        <div class="progress mb-2" style="height: 10px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+        </div>
+        <div class="text-center">
+            <small class="text-muted">Please wait while your files are being processed...</small>
+        </div>
+    </div>
+
     <form method="POST" enctype="multipart/form-data" id="uploadForm">
         {{ form.hidden_tag() }}
 
         <div class="upload-grid">
             <!-- Availability Upload -->
-            <div class="upload-card">
+            <div class="upload-card" id="availability_file_card">
+                <div class="upload-status-indicator" id="availability_file_indicator">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
                 <h5>
                     <i class="bi bi-calendar-check"></i>
                     Coach Availability Data
                 </h5>
-                <div class="upload-zone" data-target="availability_file">
-                    <i class="bi bi-file-earmark-text upload-zone-icon"></i>
-                    <div class="upload-zone-text">Drop availability.csv here or click to browse</div>
-                    <div class="upload-zone-subtext">Expected format: availability_id, coach_id, day, period, available, restriction_reason</div>
-                    {{ form.availability_file(class="form-control") }}
+                <div class="file-input-wrapper">
+                    <div class="file-input-custom" id="availability_file_wrapper">
+                        <div class="upload-icon">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <div class="upload-text">Choose availability.csv file</div>
+                        <div class="upload-subtext">Expected format: availability_id, coach_id, day, period, available, restriction_reason</div>
+                        {{ form.availability_file(id="availability_file") }}
+                        <button type="button" class="cancel-upload-btn" id="availability_file_cancel">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="file-info" id="availability_file_info"></div>
                 <div class="csv-sample" title="Click to copy sample format">
@@ -299,16 +535,26 @@
             </div>
 
             <!-- Branch Config Upload -->
-            <div class="upload-card">
+            <div class="upload-card" id="branch_config_file_card">
+                <div class="upload-status-indicator" id="branch_config_file_indicator">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
                 <h5>
                     <i class="bi bi-building"></i>
                     Branch Configuration
                 </h5>
-                <div class="upload-zone" data-target="branch_config_file">
-                    <i class="bi bi-file-earmark-text upload-zone-icon"></i>
-                    <div class="upload-zone-text">Drop branch_config.csv here or click to browse</div>
-                    <div class="upload-zone-subtext">Expected format: branch, max_classes_per_slot</div>
-                    {{ form.branch_config_file(class="form-control") }}
+                <div class="file-input-wrapper">
+                    <div class="file-input-custom" id="branch_config_file_wrapper">
+                        <div class="upload-icon">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <div class="upload-text">Choose branch_config.csv file</div>
+                        <div class="upload-subtext">Expected format: branch, max_classes_per_slot</div>
+                        {{ form.branch_config_file(id="branch_config_file") }}
+                        <button type="button" class="cancel-upload-btn" id="branch_config_file_cancel">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="file-info" id="branch_config_file_info"></div>
                 <div class="csv-sample" title="Click to copy sample format">
@@ -320,16 +566,26 @@
             </div>
 
             <!-- Coaches Upload -->
-            <div class="upload-card">
+            <div class="upload-card" id="coaches_file_card">
+                <div class="upload-status-indicator" id="coaches_file_indicator">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
                 <h5>
                     <i class="bi bi-people"></i>
                     Coach Information
                 </h5>
-                <div class="upload-zone" data-target="coaches_file">
-                    <i class="bi bi-file-earmark-text upload-zone-icon"></i>
-                    <div class="upload-zone-text">Drop coaches.csv here or click to browse</div>
-                    <div class="upload-zone-subtext">Expected format: coach_id, coach_name, residential_area, assigned_branch, position, status, etc.</div>
-                    {{ form.coaches_file(class="form-control") }}
+                <div class="file-input-wrapper">
+                    <div class="file-input-custom" id="coaches_file_wrapper">
+                        <div class="upload-icon">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <div class="upload-text">Choose coaches.csv file</div>
+                        <div class="upload-subtext">Expected format: coach_id, coach_name, residential_area, assigned_branch, position, status, etc.</div>
+                        {{ form.coaches_file(id="coaches_file") }}
+                        <button type="button" class="cancel-upload-btn" id="coaches_file_cancel">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="file-info" id="coaches_file_info"></div>
                 <div class="csv-sample" title="Click to copy sample format">
@@ -340,16 +596,26 @@
             </div>
 
             <!-- Enrollment Upload -->
-            <div class="upload-card">
+            <div class="upload-card" id="enrollment_file_card">
+                <div class="upload-status-indicator" id="enrollment_file_indicator">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
                 <h5>
                     <i class="bi bi-graph-up"></i>
                     Enrollment Data
                 </h5>
-                <div class="upload-zone" data-target="enrollment_file">
-                    <i class="bi bi-file-earmark-text upload-zone-icon"></i>
-                    <div class="upload-zone-text">Drop enrollment.csv here or click to browse</div>
-                    <div class="upload-zone-subtext">Expected format: Branch, Level Category Base, Count</div>
-                    {{ form.enrollment_file(class="form-control") }}
+                <div class="file-input-wrapper">
+                    <div class="file-input-custom" id="enrollment_file_wrapper">
+                        <div class="upload-icon">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <div class="upload-text">Choose enrollment.csv file</div>
+                        <div class="upload-subtext">Expected format: Branch, Level Category Base, Count</div>
+                        {{ form.enrollment_file(id="enrollment_file") }}
+                        <button type="button" class="cancel-upload-btn" id="enrollment_file_cancel">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="file-info" id="enrollment_file_info"></div>
                 <div class="csv-sample" title="Click to copy sample format">
@@ -361,16 +627,26 @@
             </div>
 
             <!-- Popular Timeslots Upload -->
-            <div class="upload-card">
+            <div class="upload-card" id="popular_timeslots_file_card">
+                <div class="upload-status-indicator" id="popular_timeslots_file_indicator">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
                 <h5>
                     <i class="bi bi-clock-history"></i>
                     Popular Timeslots
                 </h5>
-                <div class="upload-zone" data-target="popular_timeslots_file">
-                    <i class="bi bi-file-earmark-text upload-zone-icon"></i>
-                    <div class="upload-zone-text">Drop popular_timeslots.csv here or click to browse</div>
-                    <div class="upload-zone-subtext">Expected format: time_slot, day, level</div>
-                    {{ form.popular_timeslots_file(class="form-control") }}
+                <div class="file-input-wrapper">
+                    <div class="file-input-custom" id="popular_timeslots_file_wrapper">
+                        <div class="upload-icon">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <div class="upload-text">Choose popular_timeslots.csv file</div>
+                        <div class="upload-subtext">Expected format: time_slot, day, level</div>
+                        {{ form.popular_timeslots_file(id="popular_timeslots_file") }}
+                        <button type="button" class="cancel-upload-btn" id="popular_timeslots_file_cancel">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="file-info" id="popular_timeslots_file_info"></div>
                 <div class="csv-sample" title="Click to copy sample format">
@@ -382,24 +658,13 @@
             </div>
         </div>
 
-        <!-- Upload Progress -->
-        <div class="upload-progress">
-            <h6 class="mb-3"><i class="bi bi-upload me-2"></i>Processing Files...</h6>
-            <div class="progress mb-2" style="height: 8px;">
-                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-            </div>
-            <div class="text-center">
-                <small class="text-muted">Please wait while your files are being processed...</small>
-            </div>
-        </div>
-
         <!-- Submit Button -->
         <div class="text-center mt-5">
-            {{ form.submit(class="btn btn-upload btn-lg") }}
+            {{ form.submit(class="btn btn-upload btn-lg", id="submitBtn") }}
         </div>
     </form>
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ url_for('static', filename='js/data_upload.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/data_upload_enhanced.js') }}"></script>
 {% endblock %}
