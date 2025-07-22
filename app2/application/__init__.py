@@ -17,7 +17,9 @@ def create_app(config_path='config.cfg'):
     login_manager.login_view = '/'
 
     with app.app_context():
-        from .models import User, Branch, Level, Coach, CoachBranch, CoachOffday, CoachPreference, PopularTimeslots, EnrollmentCounts, BranchConfig, CoachAvailability
+        from .models import (User, Branch, Level, Coach, CoachBranch, CoachOffday, CoachPreference, 
+                           PopularTimeslots, EnrollmentCounts, BranchConfig, CoachAvailability,
+                           Timetable, TimetableAssignment, TimetableStatistics)
         db.create_all()
         db.session.commit()
 

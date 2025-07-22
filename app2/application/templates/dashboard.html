@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+{% block head %}
+<title>Dashboard</title>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Timetabling Dashboard</h1>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Upload Data</h5>
+                    <p class="card-text">Upload CSV files to populate the system with coach, enrollment, and scheduling data.</p>
+                    <a href="{{ url_for('pages.upload') }}" class="btn btn-primary">Upload CSV Files</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Generate Timetable</h5>
+                    <p class="card-text">Create and manage timetables using the advanced scheduling algorithm.</p>
+                    <a href="{{ url_for('pages.timetable') }}" class="btn btn-success">Manage Timetable</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Coach Database</h5>
+                    <p class="card-text">View and manage coach information, qualifications, and availability.</p>
+                    <a href="{{ url_for('pages.coach_db') }}" class="btn btn-info">View Coaches</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">System Statistics</h5>
+                    <p class="card-text">View system statistics and data coverage information.</p>
+                    <a href="#" class="btn btn-secondary">View Stats</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

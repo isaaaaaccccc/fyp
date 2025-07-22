@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, flash, redirect, jsonify,
 from werkzeug.utils import secure_filename
 import pandas as pd
 import os
+from datetime import datetime
 from application import db, bcrypt
 from application.models import User, Coach, Level, Branch, CoachBranch, CoachOffday, CoachPreference, PopularTimeslots, EnrollmentCounts, BranchConfig, CoachAvailability
 from flask_login import login_user, logout_user, login_required
@@ -182,7 +183,7 @@ def process_popular_timeslots_csv(file):
 def coach_db():
     return render_template('coach_db.html', filter=CoachFilter(), details=CoachDetails())
 
-# Updated generate endpoint to use real timetabling algorithm
+# Updated generate endpoint to use enhanced timetabling algorithm
 @api_bp.route('/generate', methods=['GET'])
 def generate():
     try:
@@ -213,6 +214,90 @@ def generate():
                 }
             }
         })
+
+@api_bp.route('/save', methods=['POST'])
+def save_timetable():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        service = TimetablingService()
+        
+        # Extract timetable name from request
+        timetable_name = data.get('name', f"Manual Save {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        
+        # Remove metadata from schedule data before saving
+        schedule_data = {k: v for k, v in data.items() 
+                        if k not in ['name', 'statistics', 'warnings', 'timetable_id']}
+        
+        timetable_id = service.save_timetable_to_db(schedule_data, timetable_name)
+        
+        return jsonify({
+            'success': True,
+            'timetable_id': timetable_id,
+            'message': f'Timetable "{timetable_name}" saved successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to save timetable: {str(e)}'}), 500
+
+@api_bp.route('/timetables', methods=['GET'])
+def list_timetables():
+    try:
+        service = TimetablingService()
+        timetables = service.list_saved_timetables()
+        return jsonify(timetables)
+    except Exception as e:
+        return jsonify({'error': f'Failed to load timetables: {str(e)}'}), 500
+
+@api_bp.route('/timetables/<int:timetable_id>', methods=['GET'])
+def load_timetable(timetable_id):
+    try:
+        service = TimetablingService()
+        timetable_data = service.load_timetable_from_db(timetable_id)
+        if not timetable_data:
+            return jsonify({'error': 'Timetable not found'}), 404
+        return jsonify(timetable_data)
+    except Exception as e:
+        return jsonify({'error': f'Failed to load timetable: {str(e)}'}), 500
+
+@api_bp.route('/timetables/<int:timetable_id>', methods=['DELETE'])
+def delete_timetable(timetable_id):
+    try:
+        service = TimetablingService()
+        success = service.delete_timetable(timetable_id)
+        if success:
+            return jsonify({'success': True, 'message': 'Timetable deleted successfully'})
+        else:
+            return jsonify({'error': 'Timetable not found'}), 404
+    except Exception as e:
+        return jsonify({'error': f'Failed to delete timetable: {str(e)}'}), 500
+
+@api_bp.route('/timetables/<int:timetable_id>/activate', methods=['POST'])
+def activate_timetable(timetable_id):
+    try:
+        service = TimetablingService()
+        success = service.set_active_timetable(timetable_id)
+        if success:
+            return jsonify({'success': True, 'message': 'Timetable activated successfully'})
+        else:
+            return jsonify({'error': 'Timetable not found'}), 404
+    except Exception as e:
+        return jsonify({'error': f'Failed to activate timetable: {str(e)}'}), 500
+
+@api_bp.route('/generate-and-save', methods=['POST'])
+def generate_and_save():
+    try:
+        data = request.get_json() or {}
+        timetable_name = data.get('name', f"Generated Schedule {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        
+        service = TimetablingService()
+        result = service.generate_timetable(save_to_db=True, timetable_name=timetable_name)
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': f'Failed to generate and save timetable: {str(e)}'}), 500
 
 @api_bp.route('/coach')
 def coach():

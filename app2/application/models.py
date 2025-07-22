@@ -120,6 +120,62 @@ class CoachAvailability(db.Model):
 # ==================== Generated Timetable ====================
 # =============================================================
 
-# class Timetable(db.Model):
-#     timetable_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-#     date_created = db.Column(db.DateTime, nullable=False, default=datetime.now)
+class Timetable(db.Model):
+    """Store generated timetables"""
+    __tablename__ = 'timetables'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    date_created = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    date_updated = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+    is_active = db.Column(db.Boolean, nullable=False, default=False)
+    algorithm_version = db.Column(db.String(32), nullable=False, default='Enhanced_v1.0')
+    
+    # Statistics
+    total_assignments = db.Column(db.Integer, nullable=True)
+    coverage_percentage = db.Column(db.Float, nullable=True)
+    popular_slot_coverage = db.Column(db.Float, nullable=True)
+    constraint_violations = db.Column(db.Integer, nullable=True)
+    
+    # Relationships
+    assignments = db.relationship('TimetableAssignment', back_populates='timetable', cascade='all, delete-orphan')
+
+class TimetableAssignment(db.Model):
+    """Individual class assignments within a timetable"""
+    __tablename__ = 'timetable_assignments'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    timetable_id = db.Column(db.Integer, db.ForeignKey('timetables.id'), nullable=False)
+    
+    # Assignment details
+    coach_id = db.Column(db.Integer, db.ForeignKey('coach.id'), nullable=False)
+    branch = db.Column(db.String(10), nullable=False)
+    level = db.Column(db.String(32), nullable=False)
+    day = db.Column(db.String(10), nullable=False)  # MON, TUE, etc.
+    start_time = db.Column(db.String(8), nullable=False)  # HH:MM format
+    end_time = db.Column(db.String(8), nullable=False)  # HH:MM format
+    duration = db.Column(db.Integer, nullable=False)  # Duration in minutes
+    students_count = db.Column(db.Integer, nullable=False)
+    is_popular = db.Column(db.Boolean, nullable=False, default=False)
+    priority_score = db.Column(db.Float, nullable=True)
+    
+    # Relationships
+    timetable = db.relationship('Timetable', back_populates='assignments')
+    coach = db.relationship('Coach', backref='timetable_assignments')
+
+class TimetableStatistics(db.Model):
+    """Detailed statistics for timetables"""
+    __tablename__ = 'timetable_statistics'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    timetable_id = db.Column(db.Integer, db.ForeignKey('timetables.id'), nullable=False)
+    
+    # Coach utilization (stored as JSON)
+    coach_utilization = db.Column(db.Text, nullable=True)  # JSON string
+    branch_distribution = db.Column(db.Text, nullable=True)  # JSON string
+    level_distribution = db.Column(db.Text, nullable=True)  # JSON string
+    constraint_violations_detail = db.Column(db.Text, nullable=True)  # JSON string
+    
+    # Relationships
+    timetable = db.relationship('Timetable', backref='statistics', uselist=False)
