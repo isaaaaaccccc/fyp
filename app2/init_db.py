@@ -21,7 +21,7 @@ max_classes = {
 }
 
 max_students = {
-    'BearyTots': 7,
+    'Tots': 7,
     'Jolly': 8,
     'Bubbly': 8,
     'Lively': 8,
@@ -35,7 +35,7 @@ max_students = {
 }
 
 duration = {
-    'BearyTots': 1,
+    'Tots': 1,
     'Jolly': 1,
     'Bubbly': 1,
     'Lively': 1,
@@ -48,8 +48,8 @@ duration = {
     'Free': 1.5
 }
 
-coaches_df = pd.read_csv('../Updated Datasets/coaches_df.csv')
-availability_df = pd.read_csv('../Updated Datasets/availability_df.csv')
+coaches_df = pd.read_csv('sample_data/coaches.csv')
+availability_df = pd.read_csv('sample_data/availability.csv')
 availability_df = availability_df[availability_df['available'] == False]
 
 def main():
@@ -96,12 +96,15 @@ def main():
                 if not prefers_teaching:
                     continue
 
-                level = Level.query.filter_by(name=level_name.replace('evel_', '')).first()
-                coach_preference = CoachPreference(
-                    coach_id=coach.id,
-                    level_id=level.id
-                )
-                db.session.add(coach_preference)            
+                # Convert column names to level names
+                mapped_level_name = level_name.replace('Level_', 'L').replace('BearyTots', 'Tots')
+                level = Level.query.filter_by(name=mapped_level_name).first()
+                if level:
+                    coach_preference = CoachPreference(
+                        coach_id=coach.id,
+                        level_id=level.id
+                    )
+                    db.session.add(coach_preference)            
 
             db.session.add(coach)
 
