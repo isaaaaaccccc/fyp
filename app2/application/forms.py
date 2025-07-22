@@ -1,6 +1,8 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms.fields import StringField, PasswordField, SubmitField, RadioField, IntegerField, SelectField, SelectMultipleField, BooleanField
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
+from wtforms.validators import DataRequired
 
 from application import db
 from .models import Branch, Coach, Level
@@ -62,3 +64,27 @@ class CoachDetails(FlaskForm):
                 field_name = f'editOffday_{day}_{half}'
                 field = BooleanField(label=f'{day} {half}')
                 setattr(self, field_name, field)
+
+# New upload forms
+class DataUploadForm(FlaskForm):
+    availability_file = FileField(
+        'Availability CSV',
+        validators=[FileAllowed(['csv'], 'CSV files only!')]
+    )
+    branch_config_file = FileField(
+        'Branch Config CSV',
+        validators=[FileAllowed(['csv'], 'CSV files only!')]
+    )
+    coaches_file = FileField(
+        'Coaches CSV',
+        validators=[FileAllowed(['csv'], 'CSV files only!')]
+    )
+    enrollment_file = FileField(
+        'Enrollment CSV',
+        validators=[FileAllowed(['csv'], 'CSV files only!')]
+    )
+    popular_timeslots_file = FileField(
+        'Popular Timeslots CSV',
+        validators=[FileAllowed(['csv'], 'CSV files only!')]
+    )
+    submit = SubmitField('Upload Files')

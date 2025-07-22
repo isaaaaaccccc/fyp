@@ -1,0 +1,405 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <title>Data Upload - Swimming Coach Management</title>
+    <style>
+        .upload-zone {
+            border: 2px dashed var(--line-color);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background-color: var(--hover-color);
+            margin-bottom: 1.5rem;
+            cursor: pointer;
+            position: relative;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--active-color);
+            background-color: rgba(13, 110, 253, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--active-color);
+            background-color: rgba(13, 110, 253, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-zone input[type="file"] {
+            display: none;
+        }
+
+        .upload-zone-icon {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.8;
+        }
+
+        .upload-zone-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-zone-subtext {
+            font-size: 0.9rem;
+            color: var(--secondary-text-color);
+            margin-bottom: 1rem;
+        }
+
+        .file-info {
+            background-color: var(--hover-color);
+            border: 1px solid var(--line-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: none;
+            position: relative;
+        }
+
+        .file-info.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .upload-progress {
+            display: none;
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: var(--hover-color);
+            border-radius: 8px;
+            border: 1px solid var(--line-color);
+        }
+
+        .upload-progress.show {
+            display: block;
+        }
+
+        .upload-card {
+            background-color: var(--sidebar-color);
+            border: 1px solid var(--line-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .upload-card:hover {
+            border-color: var(--active-color);
+            box-shadow: 0 4px 20px rgba(13, 110, 253, 0.1);
+        }
+
+        .upload-card h5 {
+            color: var(--active-color);
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .upload-card h5 i {
+            margin-right: 0.75rem;
+            font-size: 1.2rem;
+        }
+
+        .btn-upload {
+            background-color: var(--active-color);
+            border-color: var(--active-color);
+            color: white;
+            padding: 0.75rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-upload:hover {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+        }
+
+        .status-success {
+            color: #198754;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-error {
+            color: #dc3545;
+        }
+
+        .csv-sample {
+            background-color: var(--base-color);
+            border: 1px solid var(--line-color);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            margin-top: 1rem;
+            overflow-x: auto;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .csv-sample:hover {
+            border-color: var(--active-color);
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+
+        .csv-sample strong {
+            color: var(--active-color);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--line-color);
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            font-size: 1.1rem;
+            color: var(--secondary-text-color);
+            margin-bottom: 0;
+        }
+
+        .upload-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 2rem;
+        }
+
+        .file-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .file-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .file-stats {
+            font-size: 0.875rem;
+            color: var(--secondary-text-color);
+        }
+
+        .remove-file {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .remove-file:hover {
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .upload-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .upload-zone {
+                padding: 2rem 1rem;
+                min-height: 150px;
+            }
+            
+            .page-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title">Data Upload</h1>
+        <p class="page-subtitle">Upload CSV files to update your coaching system data. Drag and drop files or click to browse.</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+        {{ form.hidden_tag() }}
+
+        <div class="upload-grid">
+            <!-- Availability Upload -->
+            <div class="upload-card">
+                <h5>
+                    <i class="bi bi-calendar-check"></i>
+                    Coach Availability Data
+                </h5>
+                <div class="upload-zone" data-target="availability_file">
+                    <i class="bi bi-file-earmark-text upload-zone-icon"></i>
+                    <div class="upload-zone-text">Drop availability.csv here or click to browse</div>
+                    <div class="upload-zone-subtext">Expected format: availability_id, coach_id, day, period, available, restriction_reason</div>
+                    {{ form.availability_file(class="form-control") }}
+                </div>
+                <div class="file-info" id="availability_file_info"></div>
+                <div class="csv-sample" title="Click to copy sample format">
+                    <strong>Sample Format (Click to Copy):</strong>
+                    availability_id,coach_id,day,period,available,restriction_reason<br>
+                    1,1,MON,am,False,full_day_off<br>
+                    2,1,MON,pm,False,full_day_off
+                </div>
+            </div>
+
+            <!-- Branch Config Upload -->
+            <div class="upload-card">
+                <h5>
+                    <i class="bi bi-building"></i>
+                    Branch Configuration
+                </h5>
+                <div class="upload-zone" data-target="branch_config_file">
+                    <i class="bi bi-file-earmark-text upload-zone-icon"></i>
+                    <div class="upload-zone-text">Drop branch_config.csv here or click to browse</div>
+                    <div class="upload-zone-subtext">Expected format: branch, max_classes_per_slot</div>
+                    {{ form.branch_config_file(class="form-control") }}
+                </div>
+                <div class="file-info" id="branch_config_file_info"></div>
+                <div class="csv-sample" title="Click to copy sample format">
+                    <strong>Sample Format (Click to Copy):</strong>
+                    branch,max_classes_per_slot<br>
+                    BB,4<br>
+                    CCK,4
+                </div>
+            </div>
+
+            <!-- Coaches Upload -->
+            <div class="upload-card">
+                <h5>
+                    <i class="bi bi-people"></i>
+                    Coach Information
+                </h5>
+                <div class="upload-zone" data-target="coaches_file">
+                    <i class="bi bi-file-earmark-text upload-zone-icon"></i>
+                    <div class="upload-zone-text">Drop coaches.csv here or click to browse</div>
+                    <div class="upload-zone-subtext">Expected format: coach_id, coach_name, residential_area, assigned_branch, position, status, etc.</div>
+                    {{ form.coaches_file(class="form-control") }}
+                </div>
+                <div class="file-info" id="coaches_file_info"></div>
+                <div class="csv-sample" title="Click to copy sample format">
+                    <strong>Sample Format (Click to Copy):</strong>
+                    coach_id,coach_name,residential_area,assigned_branch,position,status,BearyTots,Jolly,...<br>
+                    1,Ayuni,Jurong West,BB,Branch Manager,Full time,False,True,...
+                </div>
+            </div>
+
+            <!-- Enrollment Upload -->
+            <div class="upload-card">
+                <h5>
+                    <i class="bi bi-graph-up"></i>
+                    Enrollment Data
+                </h5>
+                <div class="upload-zone" data-target="enrollment_file">
+                    <i class="bi bi-file-earmark-text upload-zone-icon"></i>
+                    <div class="upload-zone-text">Drop enrollment.csv here or click to browse</div>
+                    <div class="upload-zone-subtext">Expected format: Branch, Level Category Base, Count</div>
+                    {{ form.enrollment_file(class="form-control") }}
+                </div>
+                <div class="file-info" id="enrollment_file_info"></div>
+                <div class="csv-sample" title="Click to copy sample format">
+                    <strong>Sample Format (Click to Copy):</strong>
+                    Branch,Level Category Base,Count<br>
+                    BB,Advance,6<br>
+                    CCK,Level_1,12
+                </div>
+            </div>
+
+            <!-- Popular Timeslots Upload -->
+            <div class="upload-card">
+                <h5>
+                    <i class="bi bi-clock-history"></i>
+                    Popular Timeslots
+                </h5>
+                <div class="upload-zone" data-target="popular_timeslots_file">
+                    <i class="bi bi-file-earmark-text upload-zone-icon"></i>
+                    <div class="upload-zone-text">Drop popular_timeslots.csv here or click to browse</div>
+                    <div class="upload-zone-subtext">Expected format: time_slot, day, level</div>
+                    {{ form.popular_timeslots_file(class="form-control") }}
+                </div>
+                <div class="file-info" id="popular_timeslots_file_info"></div>
+                <div class="csv-sample" title="Click to copy sample format">
+                    <strong>Sample Format (Click to Copy):</strong>
+                    time_slot,day,level<br>
+                    08:30-12:30,WED,Tots<br>
+                    14:00-15:30,SAT,Level_2
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Progress -->
+        <div class="upload-progress">
+            <h6 class="mb-3"><i class="bi bi-upload me-2"></i>Processing Files...</h6>
+            <div class="progress mb-2" style="height: 8px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+            </div>
+            <div class="text-center">
+                <small class="text-muted">Please wait while your files are being processed...</small>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="text-center mt-5">
+            {{ form.submit(class="btn btn-upload btn-lg") }}
+        </div>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/data_upload.js') }}"></script>
+{% endblock %}

@@ -45,6 +45,49 @@ class Coach(db.Model):
     preferred_levels = db.relationship('CoachPreference', back_populates='coach')
 
 # =============================================================
+# ===================== New Upload Models =====================
+# =============================================================
+
+class Availability(db.Model):
+    __tablename__ = 'availability'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Auto-generated primary key
+    original_availability_id = db.Column(db.Integer, nullable=True)   # Store original CSV ID if needed
+    coach_id = db.Column(db.Integer, db.ForeignKey('coach.id'), nullable=False)
+    day = db.Column(db.String(10), nullable=False)  # MON, TUE, etc.
+    period = db.Column(db.String(10), nullable=False)  # am, pm
+    available = db.Column(db.Boolean, nullable=False)
+    restriction_reason = db.Column(db.String(100), nullable=True)
+    
+    # Add unique constraint on coach_id, day, period to prevent duplicates
+    __table_args__ = (db.UniqueConstraint('coach_id', 'day', 'period', name='_coach_day_period_uc'),)
+    
+    coach = db.relationship('Coach', backref='availability_records')
+
+class BranchConfig(db.Model):
+    __tablename__ = 'branch_config'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    branch = db.Column(db.String(10), nullable=False, unique=True)
+    max_classes_per_slot = db.Column(db.Integer, nullable=False)
+
+class Enrollment(db.Model):
+    __tablename__ = 'enrollment'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    branch = db.Column(db.String(10), nullable=False)
+    level_category_base = db.Column(db.String(50), nullable=False)
+    count = db.Column(db.Integer, nullable=False)
+
+class PopularTimeslot(db.Model):
+    __tablename__ = 'popular_timeslot'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    time_slot = db.Column(db.String(20), nullable=False)
+    day = db.Column(db.String(10), nullable=False)
+    level = db.Column(db.String(20), nullable=False)
+
+# =============================================================
 # ===== Association tables for many-to-many relationships =====
 # =============================================================
 
@@ -78,11 +121,3 @@ class CoachPreference(db.Model):
 
     coach = db.relationship('Coach', back_populates='preferred_levels')
     level = db.relationship('Level', back_populates='preferred_by_coaches')
-
-# =============================================================
-# ==================== Generated Timetable ====================
-# =============================================================
-
-# class Timetable(db.Model):
-#     timetable_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-#     date_created = db.Column(db.DateTime, nullable=False, default=datetime.now)
