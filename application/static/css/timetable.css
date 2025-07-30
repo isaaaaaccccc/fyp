@@ -1,0 +1,107 @@
+#timetableDiv table {
+    .separator {
+        border-right: 3px solid #000000 !important;
+    }
+
+    /* Time slot cell */ 
+    td:first-child {
+        /* position: sticky;
+        left: 0; */
+        width: 160px;
+        min-width: 160px;
+        text-align: center;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+}
+
+#timetableDiv table > thead {
+    text-align: center;
+
+    th {
+        background-color: var(--header-color);
+    }
+
+    .day-header {
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    
+    .coach-header {
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+}
+
+#timetableDiv table > tbody {
+    .class-cell {
+        z-index: 0;
+        font-size: 0.8rem;
+        text-align: center;
+        padding: 0;
+        min-width: 100px;
+        height: 40px;
+    }
+
+    .class-cell.drag-valid {
+        background-color: #e8f5e8;
+        border: 2px dashed #4caf50;
+    }
+
+    .class-cell.drag-invalid {
+        background-color: #ffebee;
+        border: 2px dashed #f44336;
+    }
+
+    .class-block {
+        position: relative;
+        z-index: 10;
+        color: black;
+        border-radius: 8px;
+        margin: 8px;
+        font-weight: 500;
+        
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: move;
+        user-select: none;
+        transition: all 0.2s ease;
+        opacity: 1;
+    }
+    
+    .class-block:hover {
+        opacity: 0.8;
+        transform: scale(1.02);
+    }
+    
+    .class-block.dragging {
+        opacity: 0.5;
+        transform: rotate(5deg);
+    }
+}
+
+.delete-zone {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 80px;
+    height: 80px;
+    background-color: #f44336;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+
+    visibility: hidden;
+}
+
+.delete-zone.active {
+    opacity: 1;
+    visibility: visible;
+}

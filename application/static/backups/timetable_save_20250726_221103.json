@@ -1,0 +1,152 @@
+{
+  "Bukit Batok": {
+    "coaches": [
+      "Alex Johnson",
+      "Jane Smith",
+      "John Doe"
+    ],
+    "schedule": {
+      "Saturday": {
+        "Alex Johnson": [
+          {
+            "duration": 2,
+            "name": "Advance",
+            "start_time": "1100"
+          }
+        ],
+        "John Doe": [
+          {
+            "duration": 2,
+            "name": "L2",
+            "start_time": "0900"
+          },
+          {
+            "duration": 2,
+            "name": "L3",
+            "start_time": "1300"
+          }
+        ]
+      },
+      "Thursday": {
+        "Jane Smith": [
+          {
+            "duration": 2,
+            "name": "BearyTots",
+            "start_time": "1000"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1400"
+          }
+        ]
+      },
+      "Tuesday": {
+        "Jane Smith": [
+          {
+            "duration": 2,
+            "name": "BearyTots",
+            "start_time": "1400"
+          },
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1600"
+          }
+        ],
+        "John Doe": [
+          {
+            "duration": 2,
+            "name": "L1",
+            "start_time": "0900"
+          },
+          {
+            "duration": 2,
+            "name": "L2",
+            "start_time": "1100"
+          }
+        ]
+      },
+      "Wednesday": {
+        "Alex Johnson": [
+          {
+            "duration": 2,
+            "name": "Advance",
+            "start_time": "1500"
+          },
+          {
+            "name": "L3",
+            "start_time": "1000",
+            "duration": "2"
+          }
+        ],
+        "John Doe": [
+          {
+            "name": "L1",
+            "start_time": "1700",
+            "duration": "2"
+          }
+        ]
+      }
+    }
+  },
+  "Choa Chu Kang": {
+    "coaches": [
+      "Mary Johnson",
+      "Robert Chen"
+    ],
+    "schedule": {
+      "Friday": {
+        "Mary Johnson": [
+          {
+            "duration": 2,
+            "name": "BearyTots",
+            "start_time": "1600"
+          }
+        ],
+        "Robert Chen": [
+          {
+            "duration": 2,
+            "name": "L2",
+            "start_time": "1400"
+          },
+          {
+            "name": "L1",
+            "start_time": "1000",
+            "duration": "2"
+          }
+        ]
+      },
+      "Sunday": {
+        "Mary Johnson": [
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1100"
+          },
+          {
+            "duration": 2,
+            "name": "Bubbly",
+            "start_time": "1400"
+          }
+        ],
+        "Robert Chen": [
+          {
+            "duration": 2,
+            "name": "L3",
+            "start_time": "0900"
+          }
+        ]
+      },
+      "Tuesday": {
+        "Mary Johnson": [
+          {
+            "duration": 2,
+            "name": "Jolly",
+            "start_time": "1600"
+          }
+        ]
+      }
+    }
+  }
+}
