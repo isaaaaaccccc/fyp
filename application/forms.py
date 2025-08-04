@@ -111,23 +111,23 @@ class AlgorithmConfig(FlaskForm):
     use_all_slots_after = IntegerField("Use All Slots After Iteration", validators=[DataRequired(), NumberRange(min=0)], default=15)
     shuffle_interval = IntegerField("Shuffle Interval", validators=[DataRequired(), NumberRange(min=1)], default=5)
     max_assignment_attempts = IntegerField("Max Assignment Attempts", validators=[DataRequired(), NumberRange(min=1)], default=20)
+    max_valid_attempts = IntegerField("Max Valid Attempts", validators=[DataRequired(), NumberRange(min=1)], default=5)
 
     # Scoring Weights
     popular_slot_bonus = IntegerField("Popular Slot Bonus", validators=[DataRequired()], default=20)
-    peak_hours_bonus = IntegerField("Peak Hours Bonus", validators=[DataRequired()], default=15)
-    good_hours_bonus = IntegerField("Good Hours Bonus", validators=[DataRequired()], default=10)
     weekend_bias = IntegerField("Weekend Bias", default=5)
     weekday_bias = IntegerField("Weekday Bias", default=0)
     underutilized_coach_bonus = IntegerField("Underutilized Coach Bonus", default=8)
     capacity_multiplier = FloatField("Capacity Multiplier", validators=[DataRequired()], default=2.0)
+    
+    # NEW: Back-to-Back and Diversity Parameters
+    same_type_back_to_back_penalty = IntegerField("Same Type Back-to-Back Penalty", validators=[DataRequired()], default=-15)
+    diverse_class_bonus = IntegerField("Diverse Class Bonus", validators=[DataRequired()], default=10)
 
     # Priority Weights
-    advance_level_boost = FloatField("Advance Level Boost", validators=[DataRequired()], default=2.0)
     scarcity_weight = FloatField("Scarcity Weight", validators=[DataRequired()], default=0.5)
     complexity_weight = FloatField("Complexity Weight", validators=[DataRequired()], default=0.3)
     size_weight = FloatField("Size Weight", validators=[DataRequired()], default=0.2)
-
-    pass
 
 class DataUploadForm(FlaskForm):
     availability_file = FileField(

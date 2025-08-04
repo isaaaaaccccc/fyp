@@ -244,13 +244,16 @@ class DataDrivenProcessor:
                 
             self.class_durations[key] = level_obj.duration * 30  # Convert to minutes
         
+
         # Fill in missing durations from business rules
         for level in self.all_levels:
-            if level not in self.class_durations:
+            if level not in self.class_durations or level in ['Advance', 'Free']:
                 if level in ['Tots', 'Jolly', 'Bubbly', 'Lively', 'Flexi']:
                     self.class_durations[level] = 60  # 1 hour
-                else:  # L1-Free
+                elif level in ['L1', 'L2', 'L3', 'L4', 'Advance', 'Free']:
                     self.class_durations[level] = 90  # 1.5 hours
+                else:
+                    self.class_durations[level] = 60  # Default fallback
         
         # Operating hours from business rules
         self.operating_hours = {

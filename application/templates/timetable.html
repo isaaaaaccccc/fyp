@@ -105,6 +105,11 @@
                                                 {{ configForm.max_assignment_attempts.label(class="form-label") }}
                                                 {{ configForm.max_assignment_attempts(class="form-control") }}
                                             </div>
+                                            
+                                            <div class="mb-3">
+                                                {{ configForm.max_valid_attempts.label(class="form-label") }}
+                                                {{ configForm.max_valid_attempts(class="form-control") }}
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="col-12 row">
@@ -113,16 +118,6 @@
                                             <div class="mb-3">
                                                 {{ configForm.popular_slot_bonus.label(class="form-label") }}
                                                 {{ configForm.popular_slot_bonus(class="form-control") }}
-                                            </div>
-
-                                            <div class="mb-3">
-                                                {{ configForm.peak_hours_bonus.label(class="form-label") }}
-                                                {{ configForm.peak_hours_bonus(class="form-control") }}
-                                            </div>
-
-                                            <div class="mb-3">
-                                                {{ configForm.good_hours_bonus.label(class="form-label") }}
-                                                {{ configForm.good_hours_bonus(class="form-control") }}
                                             </div>
 
                                             <div class="mb-3">
@@ -144,15 +139,21 @@
                                                 {{ configForm.capacity_multiplier.label(class="form-label") }}
                                                 {{ configForm.capacity_multiplier(class="form-control") }}
                                             </div>
+                                            
+                                            <!-- NEW: Back-to-Back and Diversity Parameters -->
+                                            <div class="mb-3">
+                                                {{ configForm.same_type_back_to_back_penalty.label(class="form-label") }}
+                                                {{ configForm.same_type_back_to_back_penalty(class="form-control") }}
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                {{ configForm.diverse_class_bonus.label(class="form-label") }}
+                                                {{ configForm.diverse_class_bonus(class="form-control") }}
+                                            </div>
                                         </div>
 
                                         <div class="col-md-6">
                                             <h6>Priority Weights</h6>
-                                            <div class="mb-3">
-                                                {{ configForm.advance_level_boost.label(class="form-label") }}
-                                                {{ configForm.advance_level_boost(class="form-control") }}
-                                            </div>
-
                                             <div class="mb-3">
                                                 {{ configForm.scarcity_weight.label(class="form-label") }}
                                                 {{ configForm.scarcity_weight(class="form-control") }}
@@ -184,6 +185,9 @@
         </div>
          
         <!-- Branch Filters to show only 1 branch timetable at a time -->
+
+        <!-- Spare capacity container -->
+        <div id="spareCapacityContainer" class="spare-capacity-container"></div>
 
         <!-- Timetable Container -->
         <div id="timetableDiv" class="h-75"></div>

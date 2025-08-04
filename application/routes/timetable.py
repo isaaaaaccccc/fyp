@@ -16,7 +16,7 @@ timetable_bp = Blueprint('timetable', __name__, url_prefix='/timetable')
 def generate_schedule():
     """Generate complete timetable schedule from database"""
     try:
-        print("🚀 Starting complete timetable generation from database...")
+        print("Starting complete timetable generation from database...")
         
         # Load data from database
         data = load_database_driven()
