@@ -15,7 +15,6 @@ class EnhancedStrictConstraintScheduler:
     4. Multi-level combinations for complex gaps
     5. Exhaustive assignment using all available resources
     6. Maximum utilization within strict constraints
-    7. Comprehensive validation to ensure requirements are met
     """
     
     # ==================== EDITABLE CONFIGURATION ====================
@@ -39,26 +38,26 @@ class EnhancedStrictConstraintScheduler:
     
     # Algorithm Behavior
     MAX_ITERATIONS = 60            # Number of optimization iterations
-    USE_ALL_SLOTS_AFTER = 15       # Switch to all slots after this iteration
     SHUFFLE_INTERVAL = 5           # Shuffle assignments every N iterations
     MAX_ASSIGNMENT_ATTEMPTS = 20   # Max attempts per requirement
-    MAX_VALID_ATTEMPTS = 5         # Max attempts to find valid solutions
     
-    # Scoring Weights (higher = more preferred)
-    POPULAR_SLOT_BONUS = 20        # Bonus for popular timeslots
-    WEEKEND_BIAS = 5               # Weekend preference (set to 0 for neutral)
-    WEEKDAY_BIAS = 0               # Weekday preference (set to positive for weekday preference)
-    UNDERUTILIZED_COACH_BONUS = 8  # Bonus for coaches with <5 classes
-    CAPACITY_MULTIPLIER = 2        # Multiplier for class capacity in scoring
+    # Scoring Weights (1-10 scale, higher = more preferred)
+    WEEKEND_BIAS = 5               # Weekend preference (1-10)
+    WEEKDAY_BIAS = 0               # Weekday preference (0-10)
+    UNDERUTILIZED_COACH_BONUS = 7  # Priority for full-time coaches with fewer classes (1-10)
+    NO_TURNAROUND_BONUS = 5        # Priority for scheduling classes back-to-back (1-10)
+    DIVERSE_CLASS_BONUS = 3        # Priority for coaches teaching diverse class levels (1-10)
+    SAME_PROGRAM_BACK_TO_BACK_PENALTY = 6  # Penalty for same program back-to-back on weekday mornings (1-10)
     
-    # NEW: Class Diversity and Anti-Back-to-Back Parameters
-    SAME_TYPE_BACK_TO_BACK_PENALTY = -15   # Penalty for back-to-back same level classes on weekday mornings
-    DIVERSE_CLASS_BONUS = 10               # Bonus for having different class types at the same time
+    # Priority Weights (1-10 scale, automatically normalized)
+    SCARCITY_WEIGHT = 5            # Priority for resource scarcity (1-10)
+    COMPLEXITY_WEIGHT = 3          # Priority for level complexity (1-10)
+    SIZE_WEIGHT = 2                # Priority for enrollment size (1-10)
     
-    # Priority Weights
-    SCARCITY_WEIGHT = 0.5          # Weight for resource scarcity in priority
-    COMPLEXITY_WEIGHT = 0.3        # Weight for level complexity in priority
-    SIZE_WEIGHT = 0.2              # Weight for enrollment size in priority
+    # Fixed internal parameters (not user-adjustable)
+    _CAPACITY_MULTIPLIER = 2.0     # Default capacity multiplier value
+    _PEAK_HOURS_BONUS = 8          # Priority for 10AM-3PM slots
+    _GOOD_HOURS_BONUS = 6          # Priority for 9AM-5PM slots
     
     # ==================== END EDITABLE CONFIGURATION ====================
     
@@ -78,12 +77,15 @@ class EnhancedStrictConstraintScheduler:
         self.coaches_data = data['coaches_data']
         self.feasible_assignments = data['feasible_assignments']
         
-        # Split assignments by popularity
+        # Use only popular assignments
         self.popular_assignments = [a for a in self.feasible_assignments if a.get('is_popular', False)]
-        self.all_assignments = self.feasible_assignments
+        
+        if len(self.popular_assignments) == 0:
+            print("WARNING: No popular assignments found. Using all feasible assignments.")
+            self.popular_assignments = self.feasible_assignments
         
         print(f"Popular assignments available: {len(self.popular_assignments)}")
-        print(f"Total feasible assignments: {len(self.all_assignments)}")
+        print(f"Only using popular timeslots for scheduling")
         
         # Load constraints and hierarchy
         self.class_capacities = data['class_capacities']
@@ -91,6 +93,24 @@ class EnhancedStrictConstraintScheduler:
         self.level_hierarchy = ['Tots', 'Jolly', 'Bubbly', 'Lively', 'Flexi', 'L1', 'L2', 'L3', 'L4', 'Advance', 'Free']
         self.weekdays = data['weekdays']
         self.weekends = data['weekends']
+        
+        # Define programs for the same_program_back_to_back penalty
+        self.program_groups = {
+            'Tots': 'Tots',
+            'Jolly': 'Jolly',
+            'Bubbly': 'Bubbly',
+            'Lively': 'Lively',
+            'Flexi': 'Flexi',
+            'L1': 'Level',
+            'L2': 'Level',
+            'L3': 'Level',
+            'L4': 'Level',
+            'Advance': 'Advanced',
+            'Free': 'Advanced'
+        }
+        
+        # Define morning hours (before 12pm) for same program back to back penalty
+        self.morning_hours = list(range(9, 12))
         
         self.total_students_required = sum(self.enrollment_dict.values())
         
@@ -111,6 +131,18 @@ class EnhancedStrictConstraintScheduler:
         if self.theoretical_capacity < self.total_students_required:
             print("WARNING: Theoretical capacity insufficient with strict workload limits")
             print("Will maximize coverage within constraints")
+        
+        # Normalize priority weights for calculations (scale of 0-10 to proportions)
+        total_weight = self.SCARCITY_WEIGHT + self.COMPLEXITY_WEIGHT + self.SIZE_WEIGHT
+        if total_weight > 0:
+            self.scarcity_weight_normalized = self.SCARCITY_WEIGHT / total_weight
+            self.complexity_weight_normalized = self.COMPLEXITY_WEIGHT / total_weight
+            self.size_weight_normalized = self.SIZE_WEIGHT / total_weight
+        else:
+            # Default to equal weights if all are zero
+            self.scarcity_weight_normalized = 0.33
+            self.complexity_weight_normalized = 0.33
+            self.size_weight_normalized = 0.34
     
     def _analyze_enrollment_requirements(self):
         """Analyze enrollment requirements and identify potential bottlenecks"""
@@ -124,24 +156,21 @@ class EnhancedStrictConstraintScheduler:
             
             popular_slots = len([a for a in self.popular_assignments 
                                if a['branch'] == branch and a['level'] == level])
-            all_slots = len([a for a in self.all_assignments 
-                           if a['branch'] == branch and a['level'] == level])
             
-            print(f"  {branch} {level}: {students} students, {qualified_coaches} coaches, {popular_slots} popular slots, {all_slots} total slots")
+            print(f"  {branch} {level}: {students} students, {qualified_coaches} coaches, {popular_slots} popular slots")
             
-            if students > 0 and (qualified_coaches == 0 or all_slots == 0):
+            if students > 0 and (qualified_coaches == 0 or popular_slots == 0):
                 print(f"    WARNING: Critical shortage for {branch} {level}")
     
     def schedule_with_complete_coverage(self):
-        """Main scheduling algorithm with strict constraint enforcement and validation"""
+        """Main scheduling algorithm with strict constraint enforcement"""
         print("\nStarting enhanced scheduling with strict workload enforcement...")
         print(f"CONSTRAINT: Never exceed {self.WEEKEND_DAILY_LIMIT} weekend / {self.WEEKDAY_DAILY_LIMIT} weekday classes per coach per day")
         print("STRATEGY: Maximize coverage within absolute limits")
+        print("NOTE: Only using popular timeslots for scheduling")
         
         best_result = None
         best_coverage = 0
-        best_valid_result = None
-        valid_attempts = 0
         
         for iteration in range(1, self.MAX_ITERATIONS + 1):
             print(f"\nITERATION {iteration}")
@@ -149,12 +178,9 @@ class EnhancedStrictConstraintScheduler:
             
             state = self._initialize_enhanced_state()
             
-            # Determine assignment pool strategy
-            use_all_slots = iteration > self.USE_ALL_SLOTS_AFTER
-            assignment_pool = self.all_assignments if use_all_slots else self.popular_assignments
-            
-            pool_type = "ALL available slots" if use_all_slots else "POPULAR slots"
-            print(f"Using {pool_type} for maximum coverage")
+            # Always use popular slots only
+            assignment_pool = self.popular_assignments
+            print(f"Using POPULAR slots only for maximum coverage")
             
             # Execute six-phase optimization
             self._phase1_enhanced_systematic(state, assignment_pool)
@@ -172,42 +198,20 @@ class EnhancedStrictConstraintScheduler:
             
             print(f"Result: {coverage:.1f}% coverage, {violations} violations, {workload_violations} workload violations")
             
-            # Perform comprehensive validation
-            validation_results = self._validate_schedule_comprehensively(result)
-            validation_status = validation_results['status']
-            
             # Accept only zero-violation results
             if violations == 0 and workload_violations == 0 and coverage > best_coverage:
                 best_result = result
                 best_coverage = coverage
                 print(f"New best VALID result: {coverage:.1f}% (strict limits enforced)")
-                
-                # Check if this result passes comprehensive validation
-                if validation_status == 'PASSED':
-                    best_valid_result = result
-                    best_valid_result['validation'] = validation_results
-                    valid_attempts += 1
-                    print(f"VALIDATION PASSED - Solution meets all requirements")
-                    
-                    # If we've found multiple valid solutions, check if we have perfect coverage
-                    if coverage >= 100.0:
-                        print("100% coverage with validation passed - SUCCESS")
-                        break
-                        
-                    # Exit after finding enough valid solutions
-                    if valid_attempts >= self.MAX_VALID_ATTEMPTS:
-                        print(f"Found {valid_attempts} valid solutions - selecting best")
-                        break
             elif workload_violations > 0:
                 print(f"REJECTED: {workload_violations} workload limit violations")
             elif violations > 0:
                 print(f"REJECTED: {violations} other constraint violations")
             
-            if validation_status != 'PASSED':
-                print(f"VALIDATION STATUS: {validation_status}")
-                if validation_results.get('violations'):
-                    violation_count = len(validation_results['violations'])
-                    print(f"Found {violation_count} validation violations")
+            # Check for perfect solution
+            if coverage >= 100.0 and violations == 0 and workload_violations == 0:
+                print("100% coverage with zero violations achieved - SUCCESS")
+                break
             
             # Report remaining gaps
             gaps = self._identify_gaps(result)
@@ -223,17 +227,10 @@ class EnhancedStrictConstraintScheduler:
             if iteration % self.SHUFFLE_INTERVAL == 0:
                 self._enhanced_adaptive_shuffle()
         
-        # Use the best validated result if available, otherwise use best constraint-valid result
-        final_result = best_valid_result if best_valid_result else best_result
-        
-        if not final_result:
-            final_result = self._create_best_effort_strict_result()
-            print("\nNo fully valid solution found. Created best effort result.")
-        
-        # Add detailed statistics to final result
-        final_result = self._add_detailed_statistics(final_result)
-        
+        # Return best valid result or fallback
+        final_result = best_result if best_result else self._create_best_effort_strict_result()
         final_coverage = final_result['statistics']['coverage_percentage']
+        
         print(f"\nFINAL RESULT: {final_coverage:.1f}% coverage with strict workload limits")
         
         if final_coverage >= 100.0:
@@ -242,313 +239,197 @@ class EnhancedStrictConstraintScheduler:
             remaining = final_result['statistics']['total_students_required'] - final_result['statistics']['total_students_scheduled']
             print(f"RESULT: {remaining} students unassigned due to strict workload constraints")
             print("GUARANTEE: All workload limits strictly respected")
+            print("\nPossible solutions to improve coverage:")
+            print("1. Increase WEEKEND_DAILY_LIMIT (currently " + str(self.WEEKEND_DAILY_LIMIT) + ")")
+            print("2. Increase WEEKDAY_DAILY_LIMIT (currently " + str(self.WEEKDAY_DAILY_LIMIT) + ")")
+            print("3. Increase weekly limits (especially for full-time coaches)")
+            print("4. Adjust CONSECUTIVE_LIMIT to allow more classes in succession")
         
-        # Print final statistics
-        self._print_final_statistics(final_result)
+        # Print detailed summary of the scheduling results
+        self._print_scheduling_summary(final_result)
         
         return final_result
     
-    def _validate_schedule_comprehensively(self, result):
-        """Comprehensive validation of schedule against original requirements"""
-        validation_results = {
-            'status': 'UNKNOWN',
-            'violations': [],
-            'warnings': [],
-            'enrollment_coverage': {}
-        }
+    def _print_scheduling_summary(self, result):
+        """Print comprehensive summary of scheduling results"""
+        print("\n" + "="*80)
+        print("SCHEDULING SUMMARY")
+        print("="*80)
         
-        # Extract schedule from result
-        schedule = result.get('schedule', [])
-        if not schedule:
-            validation_results['status'] = 'FAILED'
-            validation_results['violations'].append("No schedule entries found")
-            return validation_results
-            
-        # Validate student enrollment
-        self._validate_student_enrollment(schedule, validation_results)
+        stats = result['statistics']
+        schedule = result['schedule']
         
-        # Validate coach workload
-        self._validate_coach_workload(schedule, validation_results)
+        # Overall statistics
+        print(f"Total Students Scheduled: {stats['total_students_scheduled']} of {stats['total_students_required']} ({stats['coverage_percentage']:.1f}%)")
+        print(f"Total Classes Scheduled: {stats['total_classes']}")
+        print(f"Popular Timeslots Used: {stats['popular_slots_used']} of {stats['total_slots']} classes ({stats['popular_slots_used']/max(1, stats['total_slots'])*100:.1f}%)")
+        print(f"Merged Classes: {stats['merged_classes']}")
         
-        # Validate branch capacity
-        self._validate_branch_capacity(schedule, validation_results)
-        
-        # Validate coach qualifications
-        self._validate_coach_qualifications(schedule, validation_results)
-        
-        # Validate coach branches (one branch per day)
-        self._validate_coach_branch_assignments(schedule, validation_results)
-        
-        # Validate no overlapping classes
-        self._validate_no_overlapping_classes(schedule, validation_results)
-        
-        # NEW: Validate back-to-back classes of the same type on weekday mornings
-        self._validate_back_to_back_same_type(schedule, validation_results)
-        
-        # NEW: Validate class diversity at the same time
-        self._validate_class_diversity(schedule, validation_results)
-        
-        # Set final status
-        if validation_results['violations']:
-            validation_results['status'] = 'FAILED'
-        elif validation_results['warnings']:
-            validation_results['status'] = 'PASSED_WITH_WARNINGS'
-        else:
-            validation_results['status'] = 'PASSED'
-        
-        return validation_results
-    
-    def _validate_back_to_back_same_type(self, schedule, results):
-        """Validate back-to-back classes of the same level on weekday mornings"""
-        # Group by branch, day, level
-        branch_day_level_classes = defaultdict(list)
+        # Branch distribution
+        branch_classes = {}
+        branch_students = {}
         for entry in schedule:
             branch = entry['Branch']
-            day = entry['Day']
-            level = entry['Gymnastics Level']
-            start_time = entry['Start Time']
-            end_time = entry['End Time']
-            students = entry['Students']
-            key = (branch, day, level)
-            
-            # Only check weekday mornings
-            if day in self.weekdays and start_time < '12:00':
-                branch_day_level_classes[key].append({
-                    'start_time': start_time,
-                    'end_time': end_time,
-                    'students': students,
-                    'capacity': entry['Capacity']
-                })
+            if branch not in branch_classes:
+                branch_classes[branch] = 0
+                branch_students[branch] = 0
+            branch_classes[branch] += 1
+            branch_students[branch] += entry['Students']
         
-        # Check for back-to-back classes
-        for key, classes in branch_day_level_classes.items():
-            if len(classes) <= 1:
+        print("\nBranch Distribution:")
+        for branch in sorted(branch_classes.keys()):
+            class_count = branch_classes[branch]
+            student_count = branch_students[branch]
+            print(f"  {branch}: {class_count} classes, {student_count} students")
+        
+        # Coach utilization
+        coach_usage = {}
+        coach_classes = {}
+        for entry in schedule:
+            coach_id = entry['Coach ID']
+            coach_name = entry['Coach Name']
+            coach_status = entry['Coach Status']
+            
+            if coach_id not in coach_classes:
+                coach_classes[coach_id] = 0
+                coach_usage[coach_id] = {'name': coach_name, 'status': coach_status, 'classes': 0, 'students': 0}
+            
+            coach_classes[coach_id] += 1
+            coach_usage[coach_id]['classes'] += 1
+            coach_usage[coach_id]['students'] += entry['Students']
+        
+        # Group coaches by status
+        full_time_coaches = []
+        part_time_coaches = []
+        branch_managers = []
+        
+        for coach_id, data in coach_usage.items():
+            status = data['status']
+            if 'Full Time' in status:
+                full_time_coaches.append((coach_id, data))
+            elif 'Part Time' in status:
+                part_time_coaches.append((coach_id, data))
+            else:
+                branch_managers.append((coach_id, data))
+        
+        # Sort each group by number of classes (descending)
+        full_time_coaches.sort(key=lambda x: x[1]['classes'], reverse=True)
+        part_time_coaches.sort(key=lambda x: x[1]['classes'], reverse=True)
+        branch_managers.sort(key=lambda x: x[1]['classes'], reverse=True)
+        
+        print("\nCoach Utilization:")
+        print("  Full Time Coaches:")
+        for coach_id, data in full_time_coaches:
+            print(f"    {data['name']} (ID {coach_id}): {data['classes']} classes, {data['students']} students")
+        
+        print("  Part Time Coaches:")
+        for coach_id, data in part_time_coaches:
+            print(f"    {data['name']} (ID {coach_id}): {data['classes']} classes, {data['students']} students")
+        
+        print("  Branch Managers:")
+        for coach_id, data in branch_managers:
+            print(f"    {data['name']} (ID {coach_id}): {data['classes']} classes, {data['students']} students")
+        
+        # Level distribution
+        level_distribution = {}
+        for entry in schedule:
+            level = entry['Gymnastics Level']
+            if level not in level_distribution:
+                level_distribution[level] = {'classes': 0, 'students': 0}
+            level_distribution[level]['classes'] += 1
+            level_distribution[level]['students'] += entry['Students']
+        
+        print("\nLevel Distribution:")
+        for level in self.level_hierarchy:
+            if level in level_distribution:
+                print(f"  {level}: {level_distribution[level]['classes']} classes, {level_distribution[level]['students']} students")
+        
+        # Day distribution
+        day_distribution = {}
+        for entry in schedule:
+            day = entry['Day']
+            if day not in day_distribution:
+                day_distribution[day] = {'classes': 0, 'students': 0}
+            day_distribution[day]['classes'] += 1
+            day_distribution[day]['students'] += entry['Students']
+        
+        print("\nDay Distribution:")
+        for day in sorted(day_distribution.keys()):
+            print(f"  {day}: {day_distribution[day]['classes']} classes, {day_distribution[day]['students']} students")
+        
+        # Calculate time distribution
+        morning_classes = 0
+        afternoon_classes = 0
+        evening_classes = 0
+        
+        for entry in schedule:
+            start_time = entry['Start Time']
+            hour = int(start_time.split(':')[0])
+            
+            if hour < 12:
+                morning_classes += 1
+            elif hour < 17:
+                afternoon_classes += 1
+            else:
+                evening_classes += 1
+        
+        print("\nTime Distribution:")
+        print(f"  Morning (before 12PM): {morning_classes} classes")
+        print(f"  Afternoon (12-5PM): {afternoon_classes} classes")
+        print(f"  Evening (after 5PM): {evening_classes} classes")
+        
+        # Check for same-program back-to-back classes on weekday mornings
+        same_program_b2b = self._count_same_program_back_to_back(schedule)
+        if same_program_b2b:
+            print("\nSame Program Back-to-Back Classes on Weekday Mornings:")
+            for item in same_program_b2b[:5]:  # Show top 5
+                branch, day, program, start_times = item
+                print(f"  {branch} {day}: {program} program at {', '.join(start_times)}")
+            
+            if len(same_program_b2b) > 5:
+                print(f"  ...and {len(same_program_b2b) - 5} more instances")
+        
+        print("="*80)
+    
+    def _count_same_program_back_to_back(self, schedule):
+        """Count instances of same program back-to-back classes on weekday mornings"""
+        # Group by branch, day, coach
+        groups = defaultdict(list)
+        for entry in schedule:
+            if entry['Day'] in self.weekdays:  # Only weekdays
+                hour = int(entry['Start Time'].split(':')[0])
+                if hour in self.morning_hours:  # Only morning hours
+                    key = (entry['Branch'], entry['Day'], entry['Coach ID'])
+                    level = entry['Gymnastics Level']
+                    program = self.program_groups.get(level, level)
+                    groups[key].append({
+                        'program': program,
+                        'level': level,
+                        'start_time': entry['Start Time']
+                    })
+        
+        # Find back-to-back same program
+        same_program_b2b = []
+        for (branch, day, coach), classes in groups.items():
+            if len(classes) < 2:
                 continue
             
             # Sort by start time
             classes.sort(key=lambda x: x['start_time'])
             
-            for i in range(len(classes) - 1):
-                class1 = classes[i]
-                class2 = classes[i+1]
-                
-                # Calculate time gap
-                end1 = datetime.strptime(class1['end_time'], '%H:%M')
-                start2 = datetime.strptime(class2['start_time'], '%H:%M')
-                gap_minutes = (start2 - end1).total_seconds() / 60
-                
-                # Check if back-to-back (less than MIN_BREAK_MINUTES) and if first class is not full
-                if gap_minutes < self.MIN_BREAK_MINUTES and class1['students'] < class1['capacity']:
-                    branch, day, level = key
-                    results['warnings'].append(f"Back-to-back {level} classes on {day} morning at {branch} with first class not full ({class1['students']}/{class1['capacity']})")
-    
-    def _validate_class_diversity(self, schedule, results):
-        """Validate diversity of class types running at the same time"""
-        # Group by branch, day, start_time
-        branch_day_time_classes = defaultdict(list)
-        for entry in schedule:
-            branch = entry['Branch']
-            day = entry['Day']
-            start_time = entry['Start Time']
-            level = entry['Gymnastics Level']
-            key = (branch, day, start_time)
-            branch_day_time_classes[key].append(level)
-        
-        # Check diversity
-        for key, levels in branch_day_time_classes.items():
-            if len(levels) > 1 and len(set(levels)) == 1:
-                # Same level classes running at the same time
-                branch, day, time = key
-                level = levels[0]
-                results['warnings'].append(f"Multiple {level} classes running simultaneously at {branch} on {day} at {time}")
-    
-    def _validate_student_enrollment(self, schedule, results):
-        """Validate that students are assigned according to enrollment requirements"""
-        scheduled_students = defaultdict(int)
-        
-        # Count scheduled students by branch and level
-        for entry in schedule:
-            key = (entry['Branch'], entry['Gymnastics Level'])
-            scheduled_students[key] += entry['Students']
-        
-        # Compare with enrollment data
-        total_required = 0
-        total_scheduled = 0
-        missing_students = 0
-        
-        for req_key, req_students in self.enrollment_dict.items():
-            scheduled = scheduled_students.get(req_key, 0)
-            total_required += req_students
-            total_scheduled += min(scheduled, req_students)  # Only count up to required
+            # Group consecutive classes by program
+            program_groups = defaultdict(list)
+            for i in range(len(classes)):
+                class_info = classes[i]
+                program = class_info['program']
+                program_groups[program].append(class_info['start_time'])
             
-            # Check for missing students
-            if scheduled < req_students:
-                diff = req_students - scheduled
-                missing_students += diff
-                results['violations'].append(f"Under-scheduled: {req_key[0]} {req_key[1]} has {req_students} required but only {scheduled} scheduled")
-            
-            # Store coverage information
-            results['enrollment_coverage'][req_key] = {
-                'required': req_students,
-                'scheduled': scheduled,
-                'coverage_pct': round(scheduled / req_students * 100 if req_students > 0 else 100, 2)
-            }
+            # Check for programs with multiple consecutive classes
+            for program, times in program_groups.items():
+                if len(times) >= 2:
+                    same_program_b2b.append((branch, day, program, times))
         
-        # Calculate overall coverage
-        coverage_pct = round(total_scheduled / total_required * 100 if total_required > 0 else 100, 2)
-        results['overall_coverage'] = {
-            'total_required': total_required,
-            'total_scheduled': total_scheduled,
-            'missing_students': missing_students,
-            'coverage_pct': coverage_pct
-        }
-        
-        if missing_students > 0:
-            results['violations'].append(f"Total missing students: {missing_students}")
-    
-    def _validate_coach_workload(self, schedule, results):
-        """Validate coach workload limits"""
-        coach_daily_classes = defaultdict(lambda: defaultdict(int))
-        coach_daily_minutes = defaultdict(lambda: defaultdict(int))
-        coach_schedules = defaultdict(lambda: defaultdict(list))
-        
-        for entry in schedule:
-            coach_id = entry['Coach ID']
-            day = entry['Day']
-            duration = entry['Duration (min)']
-            
-            coach_daily_classes[coach_id][day] += 1
-            coach_daily_minutes[coach_id][day] += duration
-            coach_schedules[coach_id][day].append(entry)
-        
-        # Check daily class limits
-        for coach_id, daily_classes in coach_daily_classes.items():
-            for day, count in daily_classes.items():
-                limit = self.WEEKEND_DAILY_LIMIT if day in self.weekends else self.WEEKDAY_DAILY_LIMIT
-                if count > limit:
-                    results['violations'].append(f"Coach {coach_id} has {count} classes on {day} (limit: {limit})")
-        
-        # Check daily hours limits
-        for coach_id, daily_minutes in coach_daily_minutes.items():
-            for day, minutes in daily_minutes.items():
-                limit = self.WEEKEND_DAILY_HOURS if day in self.weekends else self.WEEKDAY_DAILY_HOURS
-                if minutes > limit:
-                    results['violations'].append(f"Coach {coach_id} has {minutes} minutes on {day} (limit: {limit})")
-        
-        # Check consecutive class limits
-        for coach_id, days in coach_schedules.items():
-            for day, entries in days.items():
-                if len(entries) <= 1:
-                    continue
-                
-                # Sort by start time
-                sorted_entries = sorted(entries, key=lambda e: e['Start Time'])
-                
-                consecutive_count = 1
-                for i in range(1, len(sorted_entries)):
-                    prev_end = datetime.strptime(sorted_entries[i-1]['End Time'], '%H:%M')
-                    curr_start = datetime.strptime(sorted_entries[i]['Start Time'], '%H:%M')
-                    
-                    gap_minutes = (curr_start - prev_end).total_seconds() / 60
-                    
-                    if gap_minutes < self.MIN_BREAK_MINUTES:
-                        consecutive_count += 1
-                        if consecutive_count > self.CONSECUTIVE_LIMIT:
-                            results['violations'].append(f"Coach {coach_id} has {consecutive_count} consecutive classes on {day} without required break")
-                            break
-                    else:
-                        consecutive_count = 1
-    
-    def _validate_branch_capacity(self, schedule, results):
-        """Validate branch capacity limits"""
-        branch_time_usage = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
-        
-        for entry in schedule:
-            branch = entry['Branch']
-            day = entry['Day']
-            
-            # Calculate time slots used by this class
-            start_time = datetime.strptime(entry['Start Time'], '%H:%M')
-            end_time = datetime.strptime(entry['End Time'], '%H:%M')
-            
-            current = start_time
-            while current < end_time:
-                time_slot = current.strftime('%H:%M')
-                branch_time_usage[branch][day][time_slot] += 1
-                current += timedelta(minutes=30)
-        
-        # Check against branch limits
-        for branch, days in branch_time_usage.items():
-            max_classes = self.branch_limits.get(branch, 4)
-            
-            for day, time_slots in days.items():
-                for time_slot, count in time_slots.items():
-                    if count > max_classes:
-                        results['violations'].append(f"Branch {branch} exceeds capacity on {day} at {time_slot}: {count} classes (limit: {max_classes})")
-    
-    def _validate_coach_qualifications(self, schedule, results):
-        """Validate that coaches are qualified for assigned levels"""
-        for entry in schedule:
-            coach_id = entry['Coach ID']
-            level = entry['Gymnastics Level']
-            
-            if coach_id in self.coaches_data:
-                coach = self.coaches_data[coach_id]
-                qualifications = coach.get('qualifications', [])
-                
-                if level not in qualifications:
-                    results['violations'].append(f"Coach {coach_id} ({coach.get('name', 'Unknown')}) not qualified to teach {level}")
-    
-    def _validate_coach_branch_assignments(self, schedule, results):
-        """Validate that coaches only work at one branch per day"""
-        coach_branch_daily = defaultdict(lambda: defaultdict(set))
-        
-        for entry in schedule:
-            coach_id = entry['Coach ID']
-            day = entry['Day']
-            branch = entry['Branch']
-            
-            coach_branch_daily[coach_id][day].add(branch)
-        
-        for coach_id, days in coach_branch_daily.items():
-            for day, branches in days.items():
-                if len(branches) > 1:
-                    results['violations'].append(f"Coach {coach_id} assigned to multiple branches on {day}: {', '.join(branches)}")
-    
-    def _validate_no_overlapping_classes(self, schedule, results):
-        """Validate that coaches don't have overlapping classes"""
-        coach_schedules = defaultdict(lambda: defaultdict(list))
-        
-        for entry in schedule:
-            coach_id = entry['Coach ID']
-            day = entry['Day']
-            start_time = entry['Start Time']
-            end_time = entry['End Time']
-            
-            coach_schedules[coach_id][day].append({
-                'branch': entry['Branch'],
-                'level': entry['Gymnastics Level'],
-                'start_time': start_time,
-                'end_time': end_time
-            })
-        
-        # Check for overlaps
-        for coach_id, days in coach_schedules.items():
-            for day, classes in days.items():
-                for i in range(len(classes)):
-                    for j in range(i+1, len(classes)):
-                        class1 = classes[i]
-                        class2 = classes[j]
-                        
-                        start1 = datetime.strptime(class1['start_time'], '%H:%M')
-                        end1 = datetime.strptime(class1['end_time'], '%H:%M')
-                        start2 = datetime.strptime(class2['start_time'], '%H:%M')
-                        end2 = datetime.strptime(class2['end_time'], '%H:%M')
-                        
-                        if start1 < end2 and start2 < end1:
-                            results['violations'].append(f"Coach {coach_id} has overlapping classes on {day}: "
-                                                       f"{class1['level']} ({class1['start_time']}-{class1['end_time']}) and "
-                                                       f"{class2['level']} ({class2['start_time']}-{class2['end_time']})")
+        return same_program_b2b
     
     def _calculate_theoretical_capacity(self):
         """Calculate maximum theoretical capacity with strict constraints"""
@@ -593,14 +474,12 @@ class EnhancedStrictConstraintScheduler:
             'branch_time_usage': defaultdict(lambda: defaultdict(lambda: defaultdict(int))),
             'requirement_coverage': defaultdict(int),
             'coach_workload': defaultdict(int),
+            'coach_levels_taught': defaultdict(set),  # Track diversity of levels taught
             'unassigned_students': dict(self.enrollment_dict),
             'critical_gaps': [],
             'resource_utilization': defaultdict(float),
             'assignment_attempts': defaultdict(int),
-            # NEW: Track branch-day-time-level information for diversity check
-            'branch_time_levels': defaultdict(lambda: defaultdict(lambda: defaultdict(set))),
-            # NEW: Track branch-day-level-time information for back-to-back check
-            'branch_day_level_times': defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+            'coach_program_morning_classes': defaultdict(lambda: defaultdict(lambda: defaultdict(list)))  # Track morning program classes
         }
     
     def _phase1_enhanced_systematic(self, state, assignment_pool):
@@ -823,7 +702,7 @@ class EnhancedStrictConstraintScheduler:
                                 
                                 if self._add_validated_assignment_strict(assignment, class_size, state):
                                     state['unassigned_students'][req_key] -= class_size
-                                    print(f"    Exhaustive class: {class_size} students, {coach['name']} on {day}")
+                                    print(f"    Exhaustive class: {class_size} students, Coach {coach['name']} on {day}")
                                     break
         
         total_scheduled = sum(a['actual_students'] for a in state['selected_assignments'])
@@ -873,7 +752,7 @@ class EnhancedStrictConstraintScheduler:
                                     state['unassigned_students'][req_key] -= class_size
                                     current_classes += 1
                                     assignment_added = True
-                                    print(f"    Max utilization: {class_size} students, {coach['name']} {day}")
+                                    print(f"    Max utilization: {class_size} students, Coach {coach['name']} {day}")
                                     break
                     
                     if not assignment_added:
@@ -896,72 +775,115 @@ class EnhancedStrictConstraintScheduler:
     # ==================== ASSIGNMENT SCORING AND SELECTION ====================
     
     def _score_assignment_enhanced(self, assignment, state):
-        """Score assignment based on configured preferences with new diversity scoring"""
+        """Score assignment based on configured preferences (1-10 scale)"""
         score = 0
         
-        # Popular slot preference
-        if assignment.get('is_popular', False):
-            score += self.POPULAR_SLOT_BONUS
+        # Time preferences (using internal fixed values)
+        start_hour = int(assignment['start_time'].split(':')[0])
+        if 10 <= start_hour <= 15:
+            score += self._PEAK_HOURS_BONUS
+        elif 9 <= start_hour <= 17:
+            score += self._GOOD_HOURS_BONUS
         
-        # Day preferences
+        # Day preferences (using 1-10 scale)
         if assignment['day'] in self.weekends:
             score += self.WEEKEND_BIAS
         else:
             score += self.WEEKDAY_BIAS
         
-        # Coach workload balance
-        coach_load = state['coach_workload'][assignment['coach_id']]
-        if coach_load < 5:
-            score += self.UNDERUTILIZED_COACH_BONUS
+        # Coach workload balance - only for full-time coaches (using 1-10 scale)
+        coach_id = assignment['coach_id']
+        coach = self.coaches_data.get(coach_id)
         
-        # Capacity utilization
-        score += assignment['capacity'] * self.CAPACITY_MULTIPLIER
+        if coach and coach['status'] == 'Full Time':
+            coach_load = state['coach_workload'][coach_id]
+            if coach_load < 5:
+                score += self.UNDERUTILIZED_COACH_BONUS
         
-        # NEW: Check for back-to-back same level classes on weekday mornings
-        branch = assignment['branch']
-        day = assignment['day']
-        level = assignment['level']
-        start_time = assignment['start_time']
+        # Back-to-back (no turnaround) bonus for consecutive classes (using 1-10 scale)
+        if self._is_back_to_back_with_existing(assignment, state):
+            score += self.NO_TURNAROUND_BONUS
         
-        if day in self.weekdays and start_time < '12:00':
-            # Check if there are already classes of the same level in the same branch & day
-            day_level_times = state['branch_day_level_times'].get(branch, {}).get(day, {}).get(level, [])
-            
-            if day_level_times:
-                # Convert to datetime for comparison
-                new_start = datetime.strptime(start_time, '%H:%M')
-                new_end = datetime.strptime(assignment['end_time'], '%H:%M')
-                
-                for existing_start, existing_end in day_level_times:
-                    # Check for back-to-back
-                    if (existing_end <= new_start and (new_start - existing_end).total_seconds()/60 < self.MIN_BREAK_MINUTES) or \
-                       (new_end <= existing_start and (existing_start - new_end).total_seconds()/60 < self.MIN_BREAK_MINUTES):
-                        score += self.SAME_TYPE_BACK_TO_BACK_PENALTY
-                        break
+        # Same program back-to-back penalty for weekday mornings
+        if self._would_create_same_program_back_to_back(assignment, state):
+            score -= self.SAME_PROGRAM_BACK_TO_BACK_PENALTY
         
-        # NEW: Check for class diversity at the same time
-        branch_time_levels = state['branch_time_levels'].get(branch, {}).get(day, {}).get(start_time, set())
-        if level not in branch_time_levels and branch_time_levels:
-            # Bonus for adding diversity
+        # Diverse class bonus (using 1-10 scale)
+        if coach_id in state['coach_levels_taught'] and assignment['level'] not in state['coach_levels_taught'][coach_id]:
             score += self.DIVERSE_CLASS_BONUS
+        
+        # Capacity utilization (using fixed value)
+        score += assignment['capacity'] * self._CAPACITY_MULTIPLIER
         
         return score
     
+    def _is_back_to_back_with_existing(self, assignment, state):
+        """Check if assignment is back-to-back with existing assignment"""
+        coach_id = assignment['coach_id']
+        day = assignment['day']
+        start_time = assignment['start_time']
+        end_time = assignment['end_time']
+        
+        start_dt = datetime.strptime(start_time, '%H:%M')
+        end_dt = datetime.strptime(end_time, '%H:%M')
+        
+        # Check if this class starts immediately after another class ends
+        for existing in state['coach_schedules'][coach_id][day]:
+            existing_end = datetime.strptime(existing['end_time'], '%H:%M')
+            if abs((start_dt - existing_end).total_seconds()) <= 5 * 60:  # Within 5 minutes
+                return True
+        
+        # Check if this class ends immediately before another class starts
+        for existing in state['coach_schedules'][coach_id][day]:
+            existing_start = datetime.strptime(existing['start_time'], '%H:%M')
+            if abs((existing_start - end_dt).total_seconds()) <= 5 * 60:  # Within 5 minutes
+                return True
+        
+        return False
+    
+    def _would_create_same_program_back_to_back(self, assignment, state):
+        """Check if this assignment would create same-program back-to-back on weekday mornings"""
+        # Only apply to weekdays and morning hours
+        day = assignment['day']
+        start_hour = int(assignment['start_time'].split(':')[0])
+        
+        if day not in self.weekdays or start_hour not in self.morning_hours:
+            return False
+        
+        coach_id = assignment['coach_id']
+        branch = assignment['branch']
+        level = assignment['level']
+        program = self.program_groups.get(level, level)
+        
+        # Check for existing same-program classes for this coach on this day and branch in the morning
+        existing_morning_classes = state['coach_program_morning_classes'][coach_id][day][branch]
+        
+        for existing_class in existing_morning_classes:
+            existing_program = existing_class['program']
+            existing_hour = existing_class['hour']
+            
+            # If same program exists and hour is adjacent or same, would create back-to-back
+            if existing_program == program and abs(existing_hour - start_hour) <= 1:
+                return True
+        
+        return False
+    
     def _get_enhanced_priority_requirements(self):
-        """Calculate priority scores for all requirements"""
+        """Calculate priority scores for all requirements using normalized weights"""
         requirements = []
         
         for req_key, students in self.enrollment_dict.items():
             branch, level = req_key
             
+            # Calculate raw scores (0-10 range)
             scarcity_score = self._calculate_scarcity_score(req_key)
             complexity_score = self._calculate_level_complexity(level)
-            size_priority = min(students / 20, 1.0)
+            size_priority = min(students / 20, 1.0) * 10  # Scale to 0-10
             
-            # Calculate combined priority score
-            priority_score = (scarcity_score * self.SCARCITY_WEIGHT + 
-                            complexity_score * self.COMPLEXITY_WEIGHT + 
-                            size_priority * self.SIZE_WEIGHT)
+            # Calculate combined priority score using normalized weights
+            priority_score = (scarcity_score * self.scarcity_weight_normalized + 
+                           complexity_score * self.complexity_weight_normalized + 
+                           size_priority * self.size_weight_normalized)
             
             requirements.append((req_key, {'students': students}, priority_score))
         
@@ -969,25 +891,27 @@ class EnhancedStrictConstraintScheduler:
         return [(req_key, req) for req_key, req, _ in requirements]
     
     def _calculate_scarcity_score(self, req_key):
-        """Calculate resource scarcity for prioritization"""
+        """Calculate resource scarcity for prioritization (0-10 scale)"""
         branch, level = req_key
         
         qualified_coaches = len([c for c in self.full_time_coaches + self.part_time_coaches + self.branch_managers
                                if level in c['qualifications'] and branch in c['branches']])
         
-        available_slots = len([a for a in self.all_assignments
+        available_slots = len([a for a in self.popular_assignments
                              if a['branch'] == branch and a['level'] == level])
         
-        scarcity = (50 / max(1, qualified_coaches)) + (30 / max(1, available_slots))
-        return min(scarcity, 10.0)
+        # Convert to 0-10 scale
+        scarcity = min(10, (50 / max(1, qualified_coaches)) + (30 / max(1, available_slots)))
+        return scarcity
     
     def _calculate_level_complexity(self, level):
-        """Calculate complexity score based on level hierarchy"""
+        """Calculate complexity score based on level hierarchy (0-10 scale)"""
         if level not in self.level_hierarchy:
-            return 0.5
+            return 5.0  # Middle of scale
         
         level_index = self.level_hierarchy.index(level)
-        return level_index / len(self.level_hierarchy)
+        # Convert to 0-10 scale
+        return (level_index / len(self.level_hierarchy)) * 10
     
     # ==================== CONSTRAINT VALIDATION ====================
     
@@ -1001,7 +925,6 @@ class EnhancedStrictConstraintScheduler:
         start_time = assignment['start_time']
         end_time = assignment['end_time']
         duration = assignment['duration']
-        level = assignment['level']
         
         # Basic availability check
         if not coach['availability'].get(day, {}).get(period, False):
@@ -1037,22 +960,6 @@ class EnhancedStrictConstraintScheduler:
         # Branch capacity limits
         if not self._within_branch_capacity(assignment, state):
             return False
-        
-        # NEW: Check for back-to-back classes of the same type on weekday mornings
-        if day in self.weekdays and start_time < '12:00':
-            day_level_times = state['branch_day_level_times'].get(branch, {}).get(day, {}).get(level, [])
-            
-            if day_level_times:
-                # Convert to datetime for comparison
-                new_start = datetime.strptime(start_time, '%H:%M')
-                new_end = datetime.strptime(end_time, '%H:%M')
-                
-                for existing_start, existing_end in day_level_times:
-                    # Check for back-to-back
-                    if (existing_end <= new_start and (new_start - existing_end).total_seconds()/60 < self.MIN_BREAK_MINUTES) or \
-                       (new_end <= existing_start and (existing_start - new_end).total_seconds()/60 < self.MIN_BREAK_MINUTES):
-                        # Only apply penalty in scoring, don't block completely
-                        pass
         
         return True
     
@@ -1273,8 +1180,6 @@ class EnhancedStrictConstraintScheduler:
                          a['level'] == level and
                          a['day'] == day)]
         
-        candidates.sort(key=lambda a: self._score_assignment_enhanced(a, state), reverse=True)
-        
         for assignment in candidates:
             if self._validate_strict_workload_constraints(assignment, state):
                 return assignment
@@ -1316,8 +1221,6 @@ class EnhancedStrictConstraintScheduler:
         day = assignment['day']
         branch = assignment['branch']
         level = assignment['level']
-        start_time = assignment['start_time']
-        end_time = assignment['end_time']
         
         state['coach_schedules'][coach_id][day].append(assignment_record)
         state['coach_daily_hours'][coach_id][day] += assignment['duration']
@@ -1325,18 +1228,25 @@ class EnhancedStrictConstraintScheduler:
         state['coach_branch_daily'][coach_id][day] = branch
         state['coach_workload'][coach_id] += 1
         
-        # NEW: Update branch-day-time-level tracking for diversity check
-        state['branch_time_levels'][branch][day][start_time].add(level)
+        # Track diverse class levels taught
+        if coach_id not in state['coach_levels_taught']:
+            state['coach_levels_taught'][coach_id] = set()
+        state['coach_levels_taught'][coach_id].add(level)
         
-        # NEW: Update branch-day-level-time tracking for back-to-back check
-        state['branch_day_level_times'][branch][day][level].append((
-            datetime.strptime(start_time, '%H:%M'),
-            datetime.strptime(end_time, '%H:%M')
-        ))
+        # Track morning program classes for same-program back-to-back detection
+        start_hour = int(assignment['start_time'].split(':')[0])
+        if day in self.weekdays and start_hour in self.morning_hours:
+            program = self.program_groups.get(level, level)
+            state['coach_program_morning_classes'][coach_id][day][branch].append({
+                'program': program,
+                'level': level,
+                'hour': start_hour,
+                'time': assignment['start_time']
+            })
         
         # Update branch time usage
-        start_dt = datetime.strptime(start_time, '%H:%M')
-        end_dt = datetime.strptime(end_time, '%H:%M')
+        start_dt = datetime.strptime(assignment['start_time'], '%H:%M')
+        end_dt = datetime.strptime(assignment['end_time'], '%H:%M')
         
         current = start_dt
         while current < end_dt:
@@ -1351,7 +1261,6 @@ class EnhancedStrictConstraintScheduler:
     def _enhanced_adaptive_shuffle(self):
         """Shuffle assignments for better exploration"""
         print("  Enhanced adaptive shuffling...")
-        random.shuffle(self.all_assignments)
         random.shuffle(self.popular_assignments)
         random.shuffle(self.full_time_coaches)
         random.shuffle(self.part_time_coaches)
@@ -1373,6 +1282,7 @@ class EnhancedStrictConstraintScheduler:
                 
                 if count > limit:
                     violations += 1
+                    print(f"  WORKLOAD VIOLATION: Coach {coach_id} has {count} classes on {day} (limit: {limit})")
         
         return violations
     
@@ -1447,261 +1357,6 @@ class EnhancedStrictConstraintScheduler:
         
         return gaps
     
-    def _add_detailed_statistics(self, result):
-        """Add detailed statistics to the result"""
-        schedule = result['schedule']
-        
-        # Classes by level
-        classes_by_level = defaultdict(int)
-        students_by_level = defaultdict(int)
-        for entry in schedule:
-            level = entry['Gymnastics Level']
-            classes_by_level[level] += 1
-            students_by_level[level] += entry['Students']
-        
-        # Coach utilization statistics
-        coach_classes = defaultdict(int)
-        coach_students = defaultdict(int)
-        coach_type_usage = defaultdict(lambda: {'coaches': set(), 'classes': 0, 'students': 0})
-        
-        for entry in schedule:
-            coach_id = entry['Coach ID']
-            coach_status = entry['Coach Status']
-            coach_classes[coach_id] += 1
-            coach_students[coach_id] += entry['Students']
-            
-            coach_type_usage[coach_status]['coaches'].add(coach_id)
-            coach_type_usage[coach_status]['classes'] += 1
-            coach_type_usage[coach_status]['students'] += entry['Students']
-        
-        # Coach type statistics
-        coach_type_statistics = {}
-        for coach_type, usage in coach_type_usage.items():
-            total_of_type = len([c for c in self.coaches_data.values() if c['status'] == coach_type])
-            coaches_used = len(usage['coaches'])
-            
-            coach_type_statistics[coach_type] = {
-                'total_coaches': total_of_type,
-                'coaches_used': coaches_used,
-                'utilization_rate': round(coaches_used / max(1, total_of_type) * 100, 2),
-                'total_classes': usage['classes'],
-                'total_students': usage['students'],
-                'classes_per_coach': round(usage['classes'] / max(1, coaches_used), 2)
-            }
-        
-        # Individual coach statistics
-        all_coach_statistics = {}
-        for coach_id, coach_data in self.coaches_data.items():
-            classes = coach_classes.get(coach_id, 0)
-            students = coach_students.get(coach_id, 0)
-            
-            all_coach_statistics[coach_id] = {
-                'name': coach_data.get('name', f"Coach {coach_id}"),
-                'status': coach_data.get('status', 'Unknown'),
-                'classes': classes,
-                'students': students
-            }
-        
-        # Branch statistics
-        classes_by_branch = defaultdict(int)
-        students_by_branch = defaultdict(int)
-        for entry in schedule:
-            branch = entry['Branch']
-            classes_by_branch[branch] += 1
-            students_by_branch[branch] += entry['Students']
-        
-        # Day distribution
-        classes_by_day = defaultdict(int)
-        students_by_day = defaultdict(int)
-        for entry in schedule:
-            day = entry['Day']
-            classes_by_day[day] += 1
-            students_by_day[day] += entry['Students']
-        
-        # Time slot distribution
-        classes_by_hour = defaultdict(int)
-        for entry in schedule:
-            start_hour = int(entry['Start Time'].split(':')[0])
-            classes_by_hour[start_hour] += 1
-        
-        # Popular slot usage
-        popular_slots = len([e for e in schedule if e.get('Popular Slot') == 'Yes'])
-        merged_classes = len([e for e in schedule if e.get('Merged') == 'Yes'])
-        
-        # Add detailed statistics to result
-        result['detailed_statistics'] = {
-            'classes_by_level': dict(classes_by_level),
-            'students_by_level': dict(students_by_level),
-            'coach_type_statistics': coach_type_statistics,
-            'all_coach_statistics': all_coach_statistics,
-            'classes_by_branch': dict(classes_by_branch),
-            'students_by_branch': dict(students_by_branch),
-            'classes_by_day': dict(classes_by_day),
-            'students_by_day': dict(students_by_day),
-            'classes_by_hour': dict(classes_by_hour),
-            'popular_slot_usage': popular_slots,
-            'merged_classes': merged_classes,
-            'weekend_classes': sum(classes_by_day.get(day, 0) for day in self.weekends),
-            'weekday_classes': sum(classes_by_day.get(day, 0) for day in self.weekdays),
-            'back_to_back_same_type': self._count_back_to_back_same_type_classes(schedule),
-            'same_time_diverse_classes': self._count_diverse_class_times(schedule)
-        }
-        
-        return result
-    
-    def _count_back_to_back_same_type_classes(self, schedule):
-        """Count back-to-back classes of same type on weekday mornings"""
-        back_to_back_count = 0
-        
-        # Group by branch, day, level
-        branch_day_level_classes = defaultdict(list)
-        for entry in schedule:
-            branch = entry['Branch']
-            day = entry['Day']
-            level = entry['Gymnastics Level']
-            start_time = entry['Start Time']
-            end_time = entry['End Time']
-            students = entry['Students']
-            capacity = entry['Capacity']
-            key = (branch, day, level)
-            
-            # Only check weekday mornings
-            if day in self.weekdays and start_time < '12:00':
-                branch_day_level_classes[key].append({
-                    'start_time': start_time,
-                    'end_time': end_time,
-                    'students': students,
-                    'capacity': capacity
-                })
-        
-        # Check for back-to-back classes
-        for key, classes in branch_day_level_classes.items():
-            if len(classes) <= 1:
-                continue
-            
-            # Sort by start time
-            classes.sort(key=lambda x: x['start_time'])
-            
-            for i in range(len(classes) - 1):
-                class1 = classes[i]
-                class2 = classes[i+1]
-                
-                # Calculate time gap
-                end1 = datetime.strptime(class1['end_time'], '%H:%M')
-                start2 = datetime.strptime(class2['start_time'], '%H:%M')
-                gap_minutes = (start2 - end1).total_seconds() / 60
-                
-                # Check if back-to-back and if first class is not full
-                if gap_minutes < self.MIN_BREAK_MINUTES and class1['students'] < class1['capacity']:
-                    back_to_back_count += 1
-        
-        return back_to_back_count
-    
-    def _count_diverse_class_times(self, schedule):
-        """Count time slots with diverse class types"""
-        diverse_time_count = 0
-        
-        # Group by branch, day, start_time
-        branch_day_time_classes = defaultdict(list)
-        for entry in schedule:
-            branch = entry['Branch']
-            day = entry['Day']
-            start_time = entry['Start Time']
-            level = entry['Gymnastics Level']
-            key = (branch, day, start_time)
-            branch_day_time_classes[key].append(level)
-        
-        # Count diverse time slots
-        for levels in branch_day_time_classes.values():
-            if len(levels) > 1 and len(set(levels)) > 1:
-                diverse_time_count += 1
-        
-        return diverse_time_count
-    
-    def _print_final_statistics(self, result):
-        """Print comprehensive final statistics"""
-        print("\nSCHEDULE STATISTICS SUMMARY")
-        print("-" * 40)
-        
-        stats = result['statistics']
-        detailed = result.get('detailed_statistics', {})
-        
-        # Coverage statistics
-        print(f"Coverage: {stats['coverage_percentage']:.2f}% ({stats['total_students_scheduled']}/{stats['total_students_required']} students)")
-        print(f"Total classes scheduled: {stats['total_classes']}")
-        
-        # Level distribution
-        print("\nCLASSES BY LEVEL:")
-        level_stats = detailed.get('classes_by_level', {})
-        for level in self.level_hierarchy:
-            if level in level_stats:
-                students = detailed.get('students_by_level', {}).get(level, 0)
-                print(f"  {level}: {level_stats[level]} classes, {students} students")
-        
-        # Coach utilization
-        print("\nCOACH UTILIZATION BY TYPE:")
-        coach_stats = detailed.get('coach_type_statistics', {})
-        for coach_type in ['Full Time', 'Part Time', 'Branch Manager']:
-            if coach_type in coach_stats:
-                type_stats = coach_stats[coach_type]
-                print(f"  {coach_type}: {type_stats['coaches_used']}/{type_stats['total_coaches']} coaches used ({type_stats['utilization_rate']}%)")
-                print(f"    Classes: {type_stats['total_classes']} ({type_stats['classes_per_coach']} per coach)")
-                print(f"    Students: {type_stats['total_students']}")
-        
-        # Individual coach statistics
-        print("\nINDIVIDUAL COACH STATISTICS:")
-        all_coach_stats = detailed.get('all_coach_statistics', {})
-        # Sort coaches by status and number of classes
-        sorted_coaches = sorted(
-            all_coach_stats.items(),
-            key=lambda x: (
-                0 if x[1]['status'] == 'Full Time' else (1 if x[1]['status'] == 'Part Time' else 2),
-                -x[1]['classes']  # Descending by class count
-            )
-        )
-        
-        for coach_id, coach_stats in sorted_coaches:
-            print(f"  {coach_stats['name']} ({coach_stats['status']}): {coach_stats['classes']} classes, {coach_stats['students']} students")
-        
-        # Branch distribution
-        print("\nBRANCH DISTRIBUTION:")
-        branch_stats = detailed.get('classes_by_branch', {})
-        for branch in sorted(branch_stats.keys()):
-            students = detailed.get('students_by_branch', {}).get(branch, 0)
-            print(f"  {branch}: {branch_stats[branch]} classes, {students} students")
-        
-        # Day distribution
-        print("\nDAY DISTRIBUTION:")
-        day_stats = detailed.get('classes_by_day', {})
-        for day in ['TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']:
-            if day in day_stats:
-                students = detailed.get('students_by_day', {}).get(day, 0)
-                print(f"  {day}: {day_stats[day]} classes, {students} students")
-        
-        # Weekday vs Weekend
-        if 'weekend_classes' in detailed and 'weekday_classes' in detailed:
-            total_classes = detailed['weekend_classes'] + detailed['weekday_classes']
-            if total_classes > 0:
-                weekend_pct = (detailed['weekend_classes'] / total_classes) * 100
-                print(f"\nWeekday vs Weekend: {detailed['weekday_classes']} weekday classes, {detailed['weekend_classes']} weekend classes ({weekend_pct:.1f}% weekend)")
-        
-        # NEW: Back-to-back and diversity metrics
-        print("\nSPECIAL METRICS:")
-        print(f"  Back-to-back same type classes on weekday mornings: {detailed.get('back_to_back_same_type', 0)}")
-        print(f"  Time slots with diverse class types: {detailed.get('same_time_diverse_classes', 0)}")
-        print(f"  Merged classes: {detailed.get('merged_classes', 0)}")
-        print(f"  Popular slots used: {detailed.get('popular_slot_usage', 0)}")
-        
-        if 'validation' in result:
-            val_status = result['validation']['status']
-            print(f"\nValidation Status: {val_status}")
-            if val_status == 'PASSED_WITH_WARNINGS':
-                warning_count = len(result['validation'].get('warnings', []))
-                print(f"  Warnings: {warning_count}")
-        
-        print("\nScheduling complete.")
-        print("-" * 40)
-
     def _build_and_validate_result(self, state):
         """Build final schedule and calculate statistics"""
         schedule = []
@@ -1783,7 +1438,7 @@ class EnhancedStrictConstraintScheduler:
             
             qualified_coaches = self._get_all_qualified_coaches(branch, level)
             if qualified_coaches:
-                assignment = self._find_optimal_assignment_strict(qualified_coaches, branch, level, state, self.all_assignments)
+                assignment = self._find_optimal_assignment_strict(qualified_coaches, branch, level, state, self.popular_assignments)
                 
                 if assignment:
                     capacity = self.class_capacities.get(level, 8)
@@ -1797,5 +1452,4 @@ class EnhancedStrictConstraintScheduler:
 def execute_enhanced_strict_constraint_scheduling(data):
     """Execute the enhanced scheduling algorithm"""
     scheduler = EnhancedStrictConstraintScheduler(data)
-    result = scheduler.schedule_with_complete_coverage()
-    return result
+    return scheduler.schedule_with_complete_coverage()

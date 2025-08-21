@@ -831,3 +831,34 @@ def get_active_timetable():
         }), 404
 
     return get_timetable_by_id(timetable.id)
+
+@api_bp.route('/coach/', methods=['GET'])
+def get_all_coaches():
+    """Get all coaches in a format suitable for the timetable interface"""
+    try:
+        # Query all coaches from the database
+        coaches = Coach.query.all()
+        
+        # Format the response
+        coach_list = []
+        for coach in coaches:
+            coach_data = {
+                'name': coach.name
+            }
+            
+            # Add status if it exists in your model (your existing code uses this field)
+            if hasattr(coach, 'status'):
+                coach_data['status'] = coach.status
+                
+            coach_list.append(coach_data)
+        
+        return jsonify({
+            'success': True,
+            'coaches': coach_list
+        })
+    except Exception as e:
+        print(f"Error fetching coaches: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500

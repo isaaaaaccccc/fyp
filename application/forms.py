@@ -90,44 +90,125 @@ def CoachDetails(*args, **kwargs):
 
 class AlgorithmConfig(FlaskForm):
     # Daily Limits
-    weekend_daily_limit = IntegerField("Weekend Daily Limit", validators=[DataRequired(), NumberRange(min=0)], default=5)
-    weekday_daily_limit = IntegerField("Weekday Daily Limit", validators=[DataRequired(), NumberRange(min=0)], default=3)
-    weekend_daily_hours = IntegerField("Weekend Daily Hours (min)", validators=[DataRequired(), NumberRange(min=0)], default=480)
-    weekday_daily_hours = IntegerField("Weekday Daily Hours (min)", validators=[DataRequired(), NumberRange(min=0)], default=240)
+    weekend_daily_limit = IntegerField("Weekend Daily Limit", 
+                                       validators=[DataRequired(), NumberRange(min=1)], 
+                                       default=5,
+                                       description="Maximum number of classes a coach can teach per weekend day")
+    
+    weekday_daily_limit = IntegerField("Weekday Daily Limit", 
+                                       validators=[DataRequired(), NumberRange(min=1)], 
+                                       default=3,
+                                       description="Maximum number of classes a coach can teach per weekday")
+    
+    weekend_daily_hours = IntegerField("Weekend Daily Hours (min)", 
+                                       validators=[DataRequired(), NumberRange(min=60)], 
+                                       default=480,
+                                       description="Maximum minutes a coach can teach per weekend day")
+    
+    weekday_daily_hours = IntegerField("Weekday Daily Hours (min)", 
+                                       validators=[DataRequired(), NumberRange(min=60)], 
+                                       default=240,
+                                       description="Maximum minutes a coach can teach per weekday")
 
     # Weekly Limits by Coach Type
-    full_time_weekly_max = IntegerField("Full-Time Weekly Max", validators=[DataRequired(), NumberRange(min=0)], default=25)
-    part_time_weekly_max = IntegerField("Part-Time Weekly Max", validators=[DataRequired(), NumberRange(min=0)], default=15)
-    manager_weekly_max = IntegerField("Manager Weekly Max", validators=[DataRequired(), NumberRange(min=0)], default=3)
+    full_time_weekly_max = IntegerField("Full-Time Weekly Max", 
+                                        validators=[DataRequired(), NumberRange(min=1)], 
+                                        default=25,
+                                        description="Maximum classes per week for full-time coaches")
+    
+    part_time_weekly_max = IntegerField("Part-Time Weekly Max", 
+                                        validators=[DataRequired(), NumberRange(min=1)], 
+                                        default=15,
+                                        description="Maximum classes per week for part-time coaches")
+    
+    manager_weekly_max = IntegerField("Manager Weekly Max", 
+                                      validators=[DataRequired(), NumberRange(min=1)], 
+                                      default=3,
+                                      description="Maximum classes per week for branch managers")
 
     # Class Management Rules
-    consecutive_limit = IntegerField("Max Consecutive Classes", validators=[DataRequired(), NumberRange(min=1)], default=3)
-    min_break_minutes = IntegerField("Min Break Between Classes (min)", validators=[DataRequired(), NumberRange(min=0)], default=60)
-    level_merge_distance = IntegerField("Max Level Merge Distance", validators=[DataRequired(), NumberRange(min=0)], default=1)
-    min_merge_size = IntegerField("Min Merge Size", validators=[DataRequired(), NumberRange(min=0)], default=3)
+    consecutive_limit = IntegerField("Max Consecutive Classes", 
+                                    validators=[DataRequired(), NumberRange(min=1)], 
+                                    default=3,
+                                    description="Maximum consecutive classes a coach can teach without a break")
+    
+    min_break_minutes = IntegerField("Min Break Between Classes (min)", 
+                                    validators=[DataRequired(), NumberRange(min=15)], 
+                                    default=60,
+                                    description="Minimum break time between classes in minutes")
+    
+    level_merge_distance = IntegerField("Max Level Merge Distance", 
+                                       validators=[DataRequired(), NumberRange(min=0)], 
+                                       default=1,
+                                       description="Maximum level difference allowed for merging classes (higher = more flexible merging)")
+    
+    min_merge_size = IntegerField("Min Merge Size", 
+                                 validators=[DataRequired(), NumberRange(min=1)], 
+                                 default=3,
+                                 description="Minimum number of students required to create a merged class")
 
     # Algorithm Behavior
-    max_iterations = IntegerField("Max Iterations", validators=[DataRequired(), NumberRange(min=1)], default=60)
-    use_all_slots_after = IntegerField("Use All Slots After Iteration", validators=[DataRequired(), NumberRange(min=0)], default=15)
-    shuffle_interval = IntegerField("Shuffle Interval", validators=[DataRequired(), NumberRange(min=1)], default=5)
-    max_assignment_attempts = IntegerField("Max Assignment Attempts", validators=[DataRequired(), NumberRange(min=1)], default=20)
-    max_valid_attempts = IntegerField("Max Valid Attempts", validators=[DataRequired(), NumberRange(min=1)], default=5)
-
-    # Scoring Weights
-    popular_slot_bonus = IntegerField("Popular Slot Bonus", validators=[DataRequired()], default=20)
-    weekend_bias = IntegerField("Weekend Bias", default=5)
-    weekday_bias = IntegerField("Weekday Bias", default=0)
-    underutilized_coach_bonus = IntegerField("Underutilized Coach Bonus", default=8)
-    capacity_multiplier = FloatField("Capacity Multiplier", validators=[DataRequired()], default=2.0)
+    max_iterations = IntegerField("Max Iterations", 
+                                 validators=[DataRequired(), NumberRange(min=1)], 
+                                 default=30,
+                                 description="Maximum optimization iterations (higher = more thorough search)")
     
-    # NEW: Back-to-Back and Diversity Parameters
-    same_type_back_to_back_penalty = IntegerField("Same Type Back-to-Back Penalty", validators=[DataRequired()], default=-15)
-    diverse_class_bonus = IntegerField("Diverse Class Bonus", validators=[DataRequired()], default=10)
+    shuffle_interval = IntegerField("Shuffle Interval", 
+                                   validators=[DataRequired(), NumberRange(min=1)], 
+                                   default=5,
+                                   description="How often to shuffle assignments for better results (lower = more frequent shuffling)")
+    
+    max_assignment_attempts = IntegerField("Max Assignment Attempts", 
+                                          validators=[DataRequired(), NumberRange(min=1)], 
+                                          default=20,
+                                          description="Maximum attempts to assign classes (higher = more persistent attempts)")
 
-    # Priority Weights
-    scarcity_weight = FloatField("Scarcity Weight", validators=[DataRequired()], default=0.5)
-    complexity_weight = FloatField("Complexity Weight", validators=[DataRequired()], default=0.3)
-    size_weight = FloatField("Size Weight", validators=[DataRequired()], default=0.2)
+    # Scoring Weights (1-10 scale)
+    weekend_bias = IntegerField("Weekend Priority", 
+                               validators=[DataRequired(), NumberRange(min=0, max=10)], 
+                               default=0,
+                               description="Priority for weekend scheduling (0-10)")
+    
+    weekday_bias = IntegerField("Weekday Priority", 
+                               validators=[DataRequired(), NumberRange(min=0, max=10)], 
+                               default=0,
+                               description="Priority for weekday scheduling (0-10)")
+    
+    underutilized_coach_bonus = IntegerField("Underutilized Coach Priority", 
+                                           validators=[DataRequired(), NumberRange(min=1, max=10)], 
+                                           default=5,
+                                           description="Priority for full-time coaches with fewer classes (1-10)")
+    
+    no_turnaround_bonus = IntegerField("No Turnaround Bonus", 
+                                     validators=[DataRequired(), NumberRange(min=1, max=10)], 
+                                     default=2,
+                                     description="Priority for scheduling classes back-to-back to avoid turnaround time (1-10)")
+    
+    diverse_class_bonus = IntegerField("Diverse Class Priority", 
+                                      validators=[DataRequired(), NumberRange(min=1, max=10)], 
+                                      default=2, 
+                                      description="Priority for coaches teaching diverse class levels (1-10)")
+    
+    same_program_back_to_back_penalty = IntegerField("Same Program Back-to-Back Penalty", 
+                                                    validators=[DataRequired(), NumberRange(min=1, max=10)], 
+                                                    default=3, 
+                                                    description="Penalty for scheduling same program back-to-back on weekday mornings (1-10)")
+
+    # Priority Weights (1-10 scale)
+    scarcity_weight = IntegerField("Resource Scarcity Priority", 
+                                validators=[DataRequired(), NumberRange(min=1, max=10)], 
+                                default=5,
+                                description="Priority based on coach/slot scarcity (1-10)")
+    
+    complexity_weight = IntegerField("Level Complexity Priority", 
+                                 validators=[DataRequired(), NumberRange(min=1, max=10)], 
+                                 default=3,
+                                 description="Priority based on level difficulty (1-10)")
+    
+    size_weight = IntegerField("Class Size Priority", 
+                           validators=[DataRequired(), NumberRange(min=1, max=10)], 
+                           default=2,
+                           description="Priority based on enrollment size (1-10)")
 
 class DataUploadForm(FlaskForm):
     availability_file = FileField(

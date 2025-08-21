@@ -315,3 +315,22 @@
     border-right: 4px solid #000000 !important;
     border-bottom: 4px solid #000000 !important;
 }
+
+/* Parameter description styling */
+.form-text {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+/* Add some spacing between form groups */
+.form-group {
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+/* Make the description stand out slightly on hover */
+.form-group:hover .form-text {
+    color: #495057;
+}
