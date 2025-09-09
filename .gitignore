@@ -10,3 +10,15 @@ __pycache__/
 *.db
 *.db-journal
 tmp*.*
+
+# Neural network model files (can be regenerated)
+models/
+*.h5
+*.pkl
+
+# Jupyter notebook outputs
+.ipynb_checkpoints/
+*.py  # Generated from notebooks
+
+# Test files (for development only)
+test_*.py
