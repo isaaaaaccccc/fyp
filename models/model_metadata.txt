@@ -1,6 +1,6 @@
 Model Training Metadata
 ======================
-Training Date: 2025-09-09 16:52:51
+Training Date: 2025-09-09 16:55:20
 Training Samples: 800
 Test Samples: 200
 Features: 7
@@ -12,4 +12,4 @@ Performance:
 Test Accuracy: 0.7150
 Test Precision: 0.7150
 Test Recall: 1.0000
-Test Loss: 0.6069
+Test Loss: 0.6037
