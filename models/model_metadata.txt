@@ -1,0 +1,15 @@
+Model Training Metadata
+======================
+Training Date: 2025-09-09 16:52:51
+Training Samples: 800
+Test Samples: 200
+Features: 7
+Epochs: 100
+Batch Size: 32
+Learning Rate: 0.001
+
+Performance:
+Test Accuracy: 0.7150
+Test Precision: 0.7150
+Test Recall: 1.0000
+Test Loss: 0.6069
